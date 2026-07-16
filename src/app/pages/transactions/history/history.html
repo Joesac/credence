@@ -1,0 +1,26 @@
+<section class="mt-6 px-4 w-full max-width">
+    
+    <app-member-selection-dropdown 
+        (onSelectMember)="onSelectMember($event)"
+    />
+
+    @if (selectedMember()) {
+        <section class="mt-4 flex flex-col gap-4 w-full">
+            @if (selectedMember(); as member) {
+                <app-user-details [user]="member" />
+            }
+
+            <app-data-table 
+                [data]="transactionRows()"
+                [columns]="transactionColumns"
+                [loading]="isLoadingHistory()"
+                loadingMessage="Loading transaction history..."
+                [emptyMessage]="tableEmptyMessage()"
+            />
+        </section>
+    } @else {
+        <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+            Select a member to preview their profile and history.
+        </div>
+    }
+</section>

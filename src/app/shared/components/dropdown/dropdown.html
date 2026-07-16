@@ -1,0 +1,57 @@
+@let isError = touched() && errors()?.length > 0;
+ 
+@if (label()) {
+    <label 
+        class="font-medium text-slate-700"
+    >
+        <span [class.!text-red-600]="isError">{{ label() }}</span> 
+        <span class="text-red-600">{{ (errors() | json)?.length > 0 ? ' *' : '' }}</span>
+    </label>
+}
+    
+<div cdkOverlayOrigin #origin="cdkOverlayOrigin" class="w-full">
+    <input 
+        class="w-full h-10 py-1 px-4 border rounded-xl outline-none focus:outline-none border-slate-300"
+        [class.border-red-600]="isError"
+        [class.border-slate-300]="!isError"
+        [type]="type()"
+        [placeholder]="placeholder()"
+        [value]="_label()"
+        [readonly]="readonly()"
+        (blur)="touch.emit()"
+        (focus)="openDropdown()"
+    />
+</div>
+
+@if (touched()) {
+    <div class="flex flex-col gap-2">
+        @for (error of errors(); track error) {
+            <span class="text-red-600 text-sm tex">{{ error?.message }}</span>
+        }
+    </div>
+}
+
+<ng-template
+    cdk-connected-overlay
+    [cdkConnectedOverlayOrigin]="origin"
+    [cdkConnectedOverlayOpen]="isDropdownOpen()"
+    [cdkConnectedOverlayPositions]="overlayPositions"
+    [cdkConnectedOverlayWidth]="panelWidth()"
+    (overlayOutsideClick)="closeDropdown()"
+    (detach)="closeDropdown()"
+>
+    <div
+        class="max-h-56 overflow-y-auto border border-slate-300 shadow-sm bg-white rounded-xl p-1 flex flex-col"
+        tabindex="-1"
+        [style.width.px]="panelWidth()"
+    >
+        @for (item of collection() ?? []; track item.label) {
+            <button
+                class="text-slate-800 text-left cursor-pointer hover:bg-slate-100 rounded-xl py-1 px-2 focus:outline-none"
+                (click)="onSelect(item)"
+            >
+                {{ item.label }}
+            </button>
+        }
+    </div>
+</ng-template>

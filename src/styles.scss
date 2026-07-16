@@ -1,0 +1,58 @@
+// src/styles.scss
+
+@use 'tailwindcss';
+@use './material-theme.scss';
+
+// 1. Define custom Tailwind v4 Theme Variables
+@theme {
+  --color-divider: #e4e7ec;
+  --color-primary: #5F77D1;
+  --color-card: #FFFFFF;
+  --color-sidebar-background: #FFFFFF;
+  --color-background: #F9FAFB;
+  --color-icon: #9AA3B2;
+  --color-text: #1E2433;
+  --color-muted: #6C7488;
+  --color-secondary: #F49236;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --rounded-normal: .5rem;
+}
+
+// 2. Base resets
+@base {
+  @apply text-text;
+}
+
+// 3. Custom component layers
+@layer component {
+  .btn-primary {
+    @apply cursor-pointer px-6 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium rounded-xl transition-colors;
+  }
+
+  .card {
+    @apply w-full p-8 bg-card rounded-3xl border border-slate-200;
+  }
+}
+
+// 4. Custom utility helpers
+@layer utilities {
+  .max-width {
+    @apply max-w-4/5;
+  }
+}
+
+// 5. Host layout adjustments
+:root {
+  // Mat Sidenav
+  --mat-sidenav-container-background-color: var(--color-sidebar-background);
+  --mat-sidenav-content-background-color: var(--color-background);
+  --mat-sidenav-content-width: 500px;
+  --mat-sidenav-container-width: 264px;
+
+  // Mat Button
+  nav {
+    --mat-button-text-container-shape: var(--rounded-normal);
+  }
+
+  --mat-form-field-container-vertical-padding: 0;
+}

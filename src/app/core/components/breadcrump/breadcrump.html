@@ -1,0 +1,12 @@
+<div class="font-medium">
+    <div class="flex gap-2 items-center text-2xl">
+        @for(page of pages; track $index) {
+            <span [class.text-muted]="$index !== pages.length - 1">
+                {{ page }}
+                @if($index !== pages.length - 1) {
+                    <span class="text-2xl">/</span>
+                }
+            </span>
+        }
+    </div>
+</div>

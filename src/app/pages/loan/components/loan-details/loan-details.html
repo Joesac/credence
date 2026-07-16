@@ -1,0 +1,39 @@
+<div class="card flex flex-col gap-2">
+    <h3 class="font-medium text-xl">Loan details</h3>
+    <div class="grid gap-6 md:grid-cols-3">
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Amount Loaned</p>
+                <p class="text-base text-slate-900">GHC {{ details().amountLoaned }}</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Total Paid</p>
+                <p class="text-base text-slate-900">GHC {{ details().amountPaid }}</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Total Left</p>
+                <p class="text-base text-slate-900">GHC {{ details().amountLoaned - details().amountPaid }}</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Interest Rate</p>
+                <p class="text-base text-slate-900">{{ details().rate }}%</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Due Date</p>
+                <p class="text-base text-slate-900">{{ details().dueDate | dateFormatter }}</p>
+            </div>
+        </div>
+    </div>
+</div>

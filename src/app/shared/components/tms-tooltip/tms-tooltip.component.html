@@ -1,0 +1,9 @@
+<div 
+    class="px-3 py-4 rounded-lg relative tms-tooltip-container" 
+    [ngStyle]="{'backgroundColor': backgroundColor()}"
+    [ngClass]="[containerClasses()]"
+    >
+    <div class="arrow" [ngStyle]="arrowColor()"></div>
+    
+    <ng-content *cdkPortalOutlet="contentPortal()"></ng-content>
+</div>

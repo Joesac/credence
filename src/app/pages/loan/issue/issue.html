@@ -1,0 +1,62 @@
+<section class="mt-6 px-4 w-full max-width">
+    <app-member-selection-dropdown 
+        (onSelectMember)="onSelectMember($event)"
+    />
+
+     @if (selectedMember()) {
+        <section class="mt-4 flex flex-col gap-4 w-full">
+            <app-user-details
+                [user]="selectedMember()!"
+            />
+
+            <form (submit)="onSubmit($event)">
+                <div class="card flex flex-col gap-4">
+                    <app-inputfield
+                        [formField]="loanIssueForm.amount"
+                        label="Amount"
+                        inputMode="decimal"
+                        placeholder="Enter loan amount"
+                    />
+
+                    <app-inputfield
+                        [formField]="loanIssueForm.interestRate"
+                        label="Interest Rate"
+                        inputMode="decimal"
+                        placeholder="Enter interest rate"
+                    />
+
+                    <app-dropdown 
+                        [formField]="loanIssueForm.repaymentFrequency"
+                        label="Repayment Frequency"
+                        [collection]="REPAYMENT_FREQUENCIES"
+                    />
+
+                    <div class="flex flex-col gap-0.5">
+                        <mat-label>Choose a date</mat-label>
+                        <mat-form-field>
+                            <input matInput [matDatepicker]="picker" [formField]="loanIssueForm.dueDate">
+                            <mat-hint>MM/DD/YYYY</mat-hint>
+                            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                        </mat-form-field>
+                    </div>
+
+                    <app-inputfield
+                        [formField]="loanIssueForm.notes"
+                        label="Notes (optional)"
+                        placeholder="Enter loan notes"
+                        type="textarea"
+                    />
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            [disabled]="loanIssueForm().invalid()"
+                        >Make Deposit</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    }
+</section>
