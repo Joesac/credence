@@ -1,5 +1,6 @@
 <app-dropdown 
+    (inputChange)="handleSearchChange($event)"
     (valueChange)="onMemberSelect($event)"
     placeholder="Search Member..."
-    [collection]="membersToDisplayInDrop"
+    [collection]="membersToDisplayInDrop()"
 />

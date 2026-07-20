@@ -1,4 +1,4 @@
-import { Component, ElementRef, model, input, output, signal, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, model, input, output, signal, inject, ViewChild, effect } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { JsonPipe } from '@angular/common';
 import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
@@ -22,6 +22,7 @@ export interface DropdownItem {
 })
 export class Dropdown implements FormValueControl<string | null> {
   readonly value = model<string | null>(null);
+  readonly inputChange = output<string>();
   readonly errors = input<any>();
   readonly touched = input<boolean>(false);
   readonly readonly = input<boolean>(false);
@@ -32,9 +33,32 @@ export class Dropdown implements FormValueControl<string | null> {
   ]);
 
   protected readonly _label = signal<string | null>(null);
+  private readonly typedLabel = signal<string>('');
   protected readonly isDropdownOpen = signal(false);
   protected readonly panelWidth = signal<number>(0);
   private readonly hostRef = inject(ElementRef<HTMLElement>);
+  private readonly syncLabelEffect = effect(() => {
+    const currentValue = this.value();
+    const items = this.collection() ?? [];
+    const matched = items.find(item => item.value === currentValue);
+    const typed = this.typedLabel();
+
+    if (matched) {
+      this._label.set(matched.label);
+      this.typedLabel.set(matched.label);
+      return;
+    }
+
+    if (typed) {
+      this._label.set(typed);
+      return;
+    }
+
+    if (currentValue === null && !this.isDropdownOpen()) {
+      this._label.set(null);
+      this.typedLabel.set('');
+    }
+  });
 
   @ViewChild(CdkConnectedOverlay) private overlayDir?: CdkConnectedOverlay;
   @ViewChild(CdkOverlayOrigin, { read: ElementRef }) private originRef?: ElementRef<HTMLElement>;
@@ -60,12 +84,22 @@ export class Dropdown implements FormValueControl<string | null> {
   errorMessage = input<string | null>(null);
   placeholder = input<string>('');
   type = input<'text'>('text');
+  inputReadonly = input<boolean>(false);
 
   protected onSelect(item: DropdownItem) {
     this.value.set(item.value);
     this._label.set(item.label);
+    this.typedLabel.set(item.label);
     this.isDropdownOpen.set(false);
     this.touch.emit();
+  }
+
+  protected onInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.value.set(null);
+    this._label.set(value);
+    this.typedLabel.set(value);
+    this.inputChange.emit(value);
   }
 
   protected openDropdown(): void {

@@ -53,6 +53,17 @@ html {
     calendar-container-background-color: var(--color-card),
     calendar-container-elevation-shadow: "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
   ));
+
+  @include mat.snack-bar-overrides((
+    container-shape: var(--rounded-normal),
+  ));
+
+  @include mat.menu-overrides((
+    container-shape: var(--rounded-normal),
+    divider-color: red,
+    container-color: var(--color-menu-bg),
+    item-hover-state-layer-color: var(--color-hover)
+  ));
 }
 
 body {

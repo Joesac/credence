@@ -1,6 +1,7 @@
-import { Component, signal, computed, output, effect } from '@angular/core';
+import { Component, signal, computed, output, effect, inject, debounced } from '@angular/core';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
-import { Member } from '../../../interfaces/user.interface';
+import { MemberService } from '../../../pages/portal/members/service/member-service';
+import { Member } from '@interfaces/member.interface';
 
 @Component({
   selector: 'app-member-selection-dropdown',
@@ -10,36 +11,59 @@ import { Member } from '../../../interfaces/user.interface';
 })
 export class MemberSelectionDropdown {
   readonly onSelectMember = output<Member | null>();
+  private readonly memberService = inject(MemberService);
 
   protected readonly searchQuery = signal<string>('');
-  
-  // This should come from the API
-  protected readonly members = <Member[]>([
-    {
-      id: '1',
-      accountNumber: "tvc123",
-      fullName: "Joseph Sackey Kontor",
-      phoneNumber: '+233542462657',
-      location: 'Tanoso',
-      isActive: true
-    },
-    {
-      id: '2',
-      accountNumber: "tvc2",
-      fullName: "Rachael Boateng",
-      phoneNumber: '+233123454365',
-      location: 'Bokankye Sene',
-      isActive: false
-    },
-  ]);
-  
-  protected readonly membersToDisplayInDrop = this.members.map(member => ({
-    label: member.fullName,
-    value: member.id
-  }));
+  private readonly debouncedQuery = debounced(this.searchQuery, 500);
+  protected readonly members = signal<Member[]>([]);
+  protected readonly isLoading = signal<boolean>(false);
+  protected readonly selectedMemberId = signal<string | null>(null);
 
-  protected onMemberSelect(memberId: string | null) {
-    const member = this.members.find((m: Member) => m.id === memberId);
-    this.onSelectMember.emit(member || null);
+  protected readonly membersToDisplayInDrop = computed(() =>
+    this.members().map(member => ({
+      label: member.fullname,
+      value: member.id,
+    }))
+  );
+
+  constructor() {
+    effect(() => {
+      const query = this.debouncedQuery.value().trim();
+      void this.loadMembers(query);
+    }, { allowSignalWrites: true });
+
+    void this.loadMembers('');
+  }
+
+  protected handleSearchChange(value: string): void {
+    this.searchQuery.set(value);
+  }
+
+  protected onMemberSelect(memberId: string | null): void {
+    if (!memberId) {
+      this.selectedMemberId.set(null);
+      this.onSelectMember.emit(null);
+      return;
+    }
+
+    const member = this.members().find(m => m.id === memberId) ?? null;
+    if (member) {
+      this.selectedMemberId.set(member.id);
+      this.searchQuery.set(member.fullname);
+    }
+    this.onSelectMember.emit(member);
+  }
+
+  private async loadMembers(search: string): Promise<void> {
+    this.isLoading.set(true);
+    try {
+      const response = await this.memberService.getMembers({ page: 1, pageSize: 20, search });
+      this.members.set(response.data);
+    } catch (error) {
+      console.error('Unable to fetch members', error);
+      this.members.set([]);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 }

@@ -17,7 +17,8 @@
         [type]="type()"
         [placeholder]="placeholder()"
         [value]="_label()"
-        [readonly]="readonly()"
+        [readonly]="readonly() || inputReadonly()"
+        (input)="onInput($event)"
         (blur)="touch.emit()"
         (focus)="openDropdown()"
     />
@@ -45,13 +46,17 @@
         tabindex="-1"
         [style.width.px]="panelWidth()"
     >
-        @for (item of collection() ?? []; track item.label) {
-            <button
-                class="text-slate-800 text-left cursor-pointer hover:bg-slate-100 rounded-xl py-1 px-2 focus:outline-none"
-                (click)="onSelect(item)"
-            >
-                {{ item.label }}
-            </button>
+        @if (!collection()?.length) {
+            <span class="text-muted w-full text-center py-2">No data found!</span>
+        } @else {
+            @for (item of collection() ?? []; track item.label) {
+                <button
+                    class="text-slate-800 text-left cursor-pointer hover:bg-slate-100 rounded-xl py-1 px-2 focus:outline-none"
+                    (click)="onSelect(item)"
+                >
+                    {{ item.label }}
+                </button>
+            }
         }
     </div>
 </ng-template>

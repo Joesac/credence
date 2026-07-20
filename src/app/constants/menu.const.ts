@@ -1,9 +1,9 @@
 import { Menu } from '../interfaces/menu.interface';
 
 export const MENU: Menu[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
+  { id: 'portal/dashboard', label: 'Dashboard', icon: 'grid' },
   {
-    id: 'members',
+    id: 'portal/members',
     label: 'Members',
     icon: 'users',
     isActive: false,
@@ -13,7 +13,7 @@ export const MENU: Menu[] = [
     ]
   },
   {
-    id: 'transactions',
+    id: 'portal/transactions',
     label: 'Transactions',
     icon: 'arrows',
     isActive: false,
@@ -24,7 +24,7 @@ export const MENU: Menu[] = [
     ]
   },
   {
-    id: 'loans',
+    id: 'portal/loans',
     label: 'Loans',
     icon: 'briefcase',
     isActive: false,
@@ -34,7 +34,7 @@ export const MENU: Menu[] = [
     ]
   },
   {
-    id: 'reports',
+    id: 'portal/reports',
     label: 'Reports',
     icon: 'chart',
     isActive: false,
@@ -43,5 +43,5 @@ export const MENU: Menu[] = [
       { id: 'monthly', label: 'Monthly Summaries', isActive: false }
     ]
   },
-  { id: 'settings', label: 'Settings', icon: 'cog', isActive: false }
+  { id: 'portal/settings', label: 'Settings', icon: 'cog', isActive: false }
 ];

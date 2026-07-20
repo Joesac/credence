@@ -1,3 +1,4 @@
-<button>
-    <!-- <svg data-p-icon="user"></svg> -->
-</button>
+<div class="flex items-center gap-2">
+  <span class="text-sm font-medium text-ink">{{ username }}</span>
+  <button matButton type="button" (click)="onLogout()">Logout</button>
+</div>

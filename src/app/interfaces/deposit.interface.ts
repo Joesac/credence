@@ -1,0 +1,30 @@
+import { PaginatedResponse } from './pagination.interface';
+
+export type DepositPaymentMethod = 'cash' | 'momo';
+
+export interface DepositPayload {
+  memberId: string;
+  receivedBy: string;
+  paymentMethod: DepositPaymentMethod;
+  amount: number;
+  notes?: string | null;
+}
+
+export interface DepositUpdatePayload extends Partial<DepositPayload> {
+  id: string;
+}
+
+export interface Deposit {
+  id: string;
+  member_id: string;
+  received_by: string;
+  payment_method: DepositPaymentMethod;
+  amount: number;
+  notes: string | null;
+  is_cancelled: number;
+  date_created: string;
+  date_updated: string;
+  is_synced: number;
+}
+
+export type PaginatedDeposits = PaginatedResponse<Deposit>;

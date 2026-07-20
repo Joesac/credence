@@ -1,7 +1,7 @@
 @let isError = touched() && errors()?.length > 0;
 
 <label 
-    class="font-medium text-slate-700"
+    class="font-medium text-slate-700 flex flex-col gap-0.5"
 >
     @if (label()) {
         <div class="flex gap-0.5">
@@ -19,22 +19,26 @@
             [placeholder]="placeholder()"
             [value]="value()"
             #input
+            (input)="value.set(input.value)"
             (blur)="touch.emit()"
             ></textarea>
     } @else {
-        <input 
-            class="w-full h-10 py-1 px-4 border rounded-xl outline-none focus:outline-none"
-            [class.border-red-600]="isError"
-            [class.border-slate-300]="!isError"
-            [type]="type()"     
-            [placeholder]="placeholder()"
-            [value]="value()"
-            [attr.inputmode]="inputMode()"
-            #input
-            (input)="value.set(input.value)"
-            (blur)="touch.emit()"
-            (keydown)="onKeydown($event)"
-        />
+        <mat-form-field>
+            <input 
+                matInput 
+                [type]="type()"
+                [value]="value()"
+                [placeholder]="placeholder()"
+                [attr.inputmode]="inputMode()"
+                #input
+                (input)="value.set(input.value)"
+                (blur)="touch.emit()"
+                (keydown)="onKeydown($event)"
+            >
+            @if (hint()) {
+                <mat-hint>MM/DD/YYYY</mat-hint>
+            }
+        </mat-form-field>
     }
 </label>
 

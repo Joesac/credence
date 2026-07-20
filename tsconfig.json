@@ -16,7 +16,11 @@
     "paths": {
       "@core/*": ["./src/app/core/*"],
       "@shared/*": ["./src/app/shared/*"],
-      "@constants/*": ["./src/app/constants/*"]
+      "@constants/*": ["./src/app/constants/*"],
+      "@interfaces/*": ["./src/app/interfaces/*"],
+      "@database/*": ["./electron/database/*"],
+      "@electronFunc": ["./electron/functions/*"],
+      "@electron": ["./electron"]
     }
   },
   "angularCompilerOptions": {

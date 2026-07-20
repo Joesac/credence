@@ -1,10 +1,15 @@
 import { Component, model, input, output } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-inputfield',
   standalone: true,
-  imports: [],
+  imports: [
+    MatFormFieldModule,
+    MatInputModule
+  ],
   templateUrl: './inputfield.html',
   styleUrl: './inputfield.scss',
   host: {
@@ -16,11 +21,12 @@ export class Inputfield implements FormValueControl<string | number | null> {
   readonly errors = input<any>();
   readonly touched = input<boolean>(false);
   readonly touch = output<void>();
-
-  label = input<string | null>(null);
-  placeholder = input<string>('');
-  type = input<'text' | 'textarea' | 'number'>('text');
-  inputMode = input<'text' | 'numeric' | 'decimal'>('text');
+  
+  readonly hint = input<string>('');
+  readonly label = input<string | null>(null);
+  readonly placeholder = input<string>('');
+  readonly type = input<'text' | 'textarea' | 'password'>('text');
+  readonly inputMode = input<'text' | 'numeric' | 'decimal'>('text');
 
   protected onKeydown(event: KeyboardEvent) {
     const mode = this.inputMode();

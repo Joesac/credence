@@ -1,0 +1,28 @@
+<section class="flex w-screen h-screen items-center justify-center px-4">
+    <form class="w-full max-w-md" (submit)="onSubmit($event)">
+        <div class="card flex flex-col gap-4">
+            <h2 class="text-3xl">Login</h2>
+
+            <app-inputfield
+                [formField]="loginForm.username"
+                label="Username"
+                placeholder="Enter username"
+            />
+            <app-inputfield
+                [formField]="loginForm.password"
+                label="Password"
+                placeholder="Enter password"
+                type="password"
+            />
+
+            <button
+                matButton
+                type="submit"
+                class="btn-primary w-full"
+                [disabled]="loginForm().invalid()"
+            >
+                Login
+            </button>
+        </div>
+    </form>
+</section>

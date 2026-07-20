@@ -1,0 +1,7 @@
+{
+  "watch": ["dist-electron"],
+  "ext": "js",
+  "ignore": ["node_modules", "src"],
+  "signal": "SIGINT",
+  "exec": "electron dist-electron/main.js"
+}

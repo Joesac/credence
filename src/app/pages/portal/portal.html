@@ -1,0 +1,53 @@
+<mat-sidenav-container class="flex h-screen w-screen">
+  <mat-sidenav mode="side" opened class="p-4">
+    <h1 class="text-3xl font-semibold">Credence</h1>
+
+    <nav class="flex flex-col gap-1 mt-4">
+      @for (item of menu; track item.id) {
+        <div>
+          @if (item.children?.length) {
+            <button
+              matButton
+              class="!justify-start w-full"
+              [class.bg-gray-200]="isSubmenuOpen(item)"
+              [class.text-ink]="isSubmenuOpen(item)"
+              (click)="toggleSubmenu($event, item)"
+            >
+              <div class="flex items-center gap-2">
+                <span>{{ item.label }}</span>
+              </div>
+            </button>
+          } @else {
+            <a
+              matButton
+              routerLink="/{{ item.id }}"
+              class="!justify-start w-full"
+              routerLinkActive="bg-brand-soft/40 text-ink"
+            >
+              {{ item.label }}
+            </a>
+          }
+
+          @if (item.children && isSubmenuOpen(item)) {
+            <div class="mt-1 space-y-1 pl-6 flex flex-col">
+              @for (subItem of item.children; track subItem.id) {
+                <a
+                  matButton
+                  [routerLink]="'/' + item.id + '/' + subItem.id"
+                  class="!justify-start w-full"
+                  routerLinkActive="bg-brand-soft/60 text-ink"
+                >
+                  {{ subItem.label }}
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+    </nav>
+  </mat-sidenav>
+  <mat-sidenav-content class="h-screen pb-4">
+    <app-topbar />
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

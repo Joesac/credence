@@ -1,7 +1,15 @@
-import { Component, input, model, computed } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  input,
+  model,
+  computed,
+  contentChildren
+} from '@angular/core';
+import { DataTableCellDirective } from "./directive/data-table-cell-directive";
 
 export interface ColumnDef<T> {
-  key: keyof T & string;
+  key: (keyof T | string) & string;
   header: string;
   formatter?: (row: T) => ColumnCellValue;
 }
@@ -16,28 +24,29 @@ type ColumnStackedValue = {
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [],
+  imports: [NgTemplateOutlet],
   templateUrl: './data-table.html',
   styleUrl: './data-table.scss',
   host: { 'class': 'block w-full' }
 })
 export class DataTable<T> {
+  private readonly cellTemplates = contentChildren(DataTableCellDirective<T>);
+
   readonly data = input.required<T[]>();
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly loading = input<boolean>(false);
   readonly loadingMessage = input<string>('Loading...');
   readonly emptyMessage = input<string>('No records available.');
 
-  // 🔄 Two-way bindable control states using modern model syntax
   readonly currentPage = model<number>(1);
-  readonly pageSize = model<number>(5);
+  readonly pageSize = model<number>(10);
 
-  // 📥 Optional total record count override (crucial for server-side slicing)
+  // Optional total record count override (crucial for server-side slicing)
   readonly totalRecords = input<number | null>(null);
 
-  protected readonly pageSizeOptions = [5, 10, 20, 50];
+  protected readonly pageSizeOptions = [10, 20, 50, 100];
 
-  // 🧮 Compute the actual baseline population cap
+  // Compute the actual baseline population cap
   protected readonly totalCount = computed(() => {
     const override = this.totalRecords();
     return override !== null ? override : this.data().length;
@@ -47,7 +56,7 @@ export class DataTable<T> {
     return Math.ceil(this.totalCount() / this.pageSize()) || 1;
   });
 
-  // ✂️ Slice ONLY if the parent hasn't explicitly supplied a server-side record cap
+  // Slice ONLY if the parent hasn't explicitly supplied a server-side record cap
   protected readonly paginatedData = computed(() => {
     if (this.totalRecords() !== null) {
       return this.data(); // Parent is already passing down pre-sliced chunk profiles
@@ -79,6 +88,11 @@ export class DataTable<T> {
     const select = event.target as HTMLSelectElement;
     this.pageSize.set(Number(select.value));
     this.currentPage.set(1);
+  }
+
+  protected getCellTemplate(key: string): DataTableCellDirective<T> | null {
+    const templates = this.cellTemplates();
+    return templates.find(template => template.columnKey() === key) ?? null;
   }
 
   // Expose Math to template cleanly
