@@ -1,5 +1,5 @@
 import { Component, input, inject } from '@angular/core';
-import { Utils } from '@shared/services/utils';
+import { UtilsService } from '@shared/services/utils-service';
 import { DateFormatterPipe } from '@shared/pipes/date-formatter-pipe';
 
 export interface LoanDetailsData {
@@ -16,7 +16,7 @@ export interface LoanDetailsData {
   styleUrl: './loan-details.scss',
 })
 export class LoanDetails {
-  protected readonly utilsService = inject(Utils);
+  protected readonly utilsService = inject(UtilsService);
 
   readonly details = input.required<LoanDetailsData>();
 }

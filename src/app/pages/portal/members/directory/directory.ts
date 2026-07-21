@@ -99,10 +99,12 @@ export class Directory implements OnInit {
         return;
       }
       console.error('Failed to load members directory page', error);
-      this.toastService.error('Couldn\'t fetch members', {
-        label: 'Retry',
-        callback: () => {
-          this.loadMembers(this.currentPage(), this.pageSize(), this.debouncedQuery.value()?.trim() ?? '');
+      this.toastService.error({
+        message: 'Couldn\'t fetch members', action: {
+          label: 'Retry',
+          callback: () => {
+            this.loadMembers(this.currentPage(), this.pageSize(), this.debouncedQuery.value()?.trim() ?? '');
+          }
         }
       });
       this.members.set([]);
@@ -118,11 +120,11 @@ export class Directory implements OnInit {
     switch (option.id) {
       case 'contribution':
         // TODO: wire to contribution flow
-        this.toastService.success(`Ready to contribute for ${member.fullname}`);
+        this.toastService.success({ message: `Ready to contribute for ${member.fullname}` });
         break;
       case 'loan':
         // TODO: wire to loan payment flow
-        this.toastService.success(`Ready to record loan payment for ${member.fullname}`);
+        this.toastService.success({ message: `Ready to record loan payment for ${member.fullname}` });
         break;
       default:
         break;

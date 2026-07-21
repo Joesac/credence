@@ -21,6 +21,37 @@ import {
 import { WITHDRAWAL_BASE_COLUMNS } from '../constants';
 import { createIpcError } from '../errors';
 
+type TransactionTable = 'deposits' | 'withdrawals';
+type TransactionPrefix = 'DEP' | 'WDR';
+
+function formatDateStamp(): string {
+  const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return isoDate.replace(/-/g, '');
+}
+
+function generateTransactionId(
+  db: Database.Database,
+  table: TransactionTable,
+  prefix: TransactionPrefix
+): string {
+  const dateStamp = formatDateStamp();
+  const likePattern = `${prefix}-${dateStamp}-%`;
+  const stmt = db.prepare<{ pattern: string }>(`
+    SELECT transaction_id
+    FROM ${table}
+    WHERE transaction_id LIKE @pattern
+    ORDER BY transaction_id DESC
+    LIMIT 1
+  `);
+  const existing = stmt.get({ pattern: likePattern }) as { transaction_id?: string } | undefined;
+  const lastCounter = existing?.transaction_id
+    ? Number(existing.transaction_id.split('-').pop())
+    : NaN;
+  const nextCounter = Number.isFinite(lastCounter) ? (lastCounter as number) + 1 : 1;
+  const suffix = String(nextCounter).padStart(4, '0');
+  return `${prefix}-${dateStamp}-${suffix}`;
+}
+
 /**
  * Normalizes deposit rows to the sanitized variant consumed by IPC responders.
  */
@@ -33,13 +64,15 @@ function sanitizeDeposit(row: DbDepositRow): SanitizedDeposit {
  */
 export function createDeposit(db: Database.Database, payload: CreateDepositPayload) {
   const id = randomUUID();
+  const transactionId = generateTransactionId(db, 'deposits', 'DEP');
   const stmt = db.prepare(`
-    INSERT INTO deposits (id, member_id, received_by, payment_method, amount, notes)
-    VALUES (@id, @member_id, @received_by, @payment_method, @amount, @notes)
+    INSERT INTO deposits (id, transaction_id, member_id, received_by, payment_method, amount, notes)
+    VALUES (@id, @transaction_id, @member_id, @received_by, @payment_method, @amount, @notes)
   `);
 
   stmt.run({
     id,
+    transaction_id: transactionId,
     member_id: payload.memberId,
     received_by: payload.receivedBy,
     payment_method: payload.paymentMethod,
@@ -86,7 +119,7 @@ export function fetchDeposits(
     SELECT ${DEPOSIT_BASE_COLUMNS}
     FROM deposits
     ${whereClause}
-    ORDER BY datetime(date_updated) DESC
+    ORDER BY datetime(date_created) DESC
     LIMIT @limit OFFSET @offset
   `);
 
@@ -244,19 +277,22 @@ export function createWithdrawal(db: Database.Database, payload: CreateWithdrawa
   }
 
   const id = randomUUID();
+  const transactionId = generateTransactionId(db, 'withdrawals', 'WDR');
   const stmt = db.prepare<{
     id: string;
+    transaction_id: string;
     member_id: string;
     issuer_id: string;
     amount: number;
     notes: string | null;
   }>(`
-    INSERT INTO withdrawals (id, member_id, issuer_id, amount, notes)
-    VALUES (@id, @member_id, @issuer_id, @amount, @notes)
+    INSERT INTO withdrawals (id, transaction_id, member_id, issuer_id, amount, notes)
+    VALUES (@id, @transaction_id, @member_id, @issuer_id, @amount, @notes)
   `);
 
   stmt.run({
     id,
+    transaction_id: transactionId,
     member_id: payload.memberId,
     issuer_id: payload.issuerId,
     amount: payload.amount,
@@ -304,7 +340,7 @@ export function fetchWithdrawals(
     SELECT ${WITHDRAWAL_BASE_COLUMNS}
     FROM withdrawals
     ${whereClause}
-    ORDER BY datetime(date_updated) DESC
+    ORDER BY datetime(date_created) DESC
     LIMIT @limit OFFSET @offset
   `);
   const rows = (listStmt.all({ ...params, limit: pageSize, offset }) as DbWithdrawalRow[]).map(

@@ -14,6 +14,12 @@ import {
   WithdrawalPayload,
   WithdrawalUpdatePayload,
 } from '@interfaces/withdrawal.interface';
+import {
+  Loan,
+  LoanPayload,
+  LoanUpdatePayload,
+  PaginatedLoans,
+} from '@interfaces/loan.interface';
 
 export interface ElectronAPI {
   getUsers: () => Promise<User[]>;
@@ -36,6 +42,11 @@ export interface ElectronAPI {
   addWithdrawal: (payload: WithdrawalPayload) => Promise<Withdrawal>;
   updateWithdrawal: (payload: WithdrawalUpdatePayload) => Promise<Withdrawal | null>;
   deleteWithdrawal: (payload: { id: string }) => Promise<{ success: boolean }>;
+  getLoans: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string; issuerId?: string }) => Promise<PaginatedLoans>;
+  getMemberLoans: (payload: PaginationRequest & { memberId: string; includeCancelled?: boolean }) => Promise<PaginatedLoans>;
+  addLoan: (payload: LoanPayload) => Promise<Loan>;
+  updateLoan: (payload: LoanUpdatePayload) => Promise<Loan | null>;
+  deleteLoan: (payload: { id: string }) => Promise<{ success: boolean }>;
 }
 
 declare global {

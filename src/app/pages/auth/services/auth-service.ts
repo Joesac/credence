@@ -1,6 +1,7 @@
 import { Service } from '@angular/core';
 import { AUTH_SESSION_KEY, AUTH_USER_KEY, AUTH_USERNAME_KEY } from '@constants/auth.const';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
+import { ToastService } from '@core/components/toast/service/toast-service';
 
 interface LoginPayload {
   username: string;
@@ -79,6 +80,27 @@ export class AuthService extends IpcBridgeService {
     }
 
     return user as AuthUser;
+  }
+
+  /**
+   * Normalizes auth/session errors thrown while validating the active user and surfaces user-friendly toast feedback.
+   */
+  async handleAuthError(
+    error: unknown,
+    toastService: ToastService,
+    messages?: { expired?: string; generic?: string }
+  ): Promise<void> {
+    console.error('Unable to verify active session', error);
+    const message = error instanceof Error ? error.message : '';
+    const sessionError = message === 'NOT_AUTHENTICATED' || message === 'SESSION_EXPIRED';
+
+    if (sessionError) {
+      await this.logout();
+      toastService.error({ message: messages?.expired ?? 'Session expired. Please log in again.' });
+      return;
+    }
+
+    toastService.error({ message: messages?.generic ?? 'Unable to verify your session. Please try again.' });
   }
 
   /**

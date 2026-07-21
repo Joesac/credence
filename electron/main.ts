@@ -12,15 +12,19 @@ import {
 import {
   DEVELOPMENT_DATABASE_FILENAME,
   IPC_CHANNEL_ADD_DEPOSIT,
+  IPC_CHANNEL_ADD_LOAN,
   IPC_CHANNEL_ADD_MEMBER,
   IPC_CHANNEL_ADD_USER,
   IPC_CHANNEL_ADD_WITHDRAWAL,
   IPC_CHANNEL_DELETE_DEPOSIT,
+  IPC_CHANNEL_DELETE_LOAN,
   IPC_CHANNEL_DELETE_MEMBER,
   IPC_CHANNEL_DELETE_WITHDRAWAL,
   IPC_CHANNEL_GET_DEPOSITS,
+  IPC_CHANNEL_GET_LOANS,
   IPC_CHANNEL_GET_MEMBER_BY_ID,
   IPC_CHANNEL_GET_MEMBER_FINANCIALS,
+  IPC_CHANNEL_GET_MEMBER_LOANS,
   IPC_CHANNEL_GET_MEMBERS,
   IPC_CHANNEL_GET_USERS,
   IPC_CHANNEL_GET_USER_BY_ID,
@@ -28,6 +32,7 @@ import {
   IPC_CHANNEL_LOGIN_USER,
   IPC_CHANNEL_LOGOUT_USER,
   IPC_CHANNEL_UPDATE_DEPOSIT,
+  IPC_CHANNEL_UPDATE_LOAN,
   IPC_CHANNEL_UPDATE_MEMBER,
   IPC_CHANNEL_UPDATE_USER,
   IPC_CHANNEL_UPDATE_WITHDRAWAL,
@@ -65,20 +70,31 @@ import {
   CreateUserPayload,
   CreateDepositPayload,
   CreateWithdrawalPayload,
+  CreateLoanPayload,
   DeleteMemberPayload,
   DeleteDepositPayload,
+  DeleteLoanPayload,
   DeleteWithdrawalPayload,
   DepositQueryOptions,
   FetchMembersPayload,
+  LoanQueryOptions,
   LoginUserPayload,
   LogoutUserPayload,
   MemberFinancialSummaryPayload,
   UpdateMemberPayload,
   UpdateUserPayload,
   UpdateDepositPayload,
+  UpdateLoanPayload,
   UpdateWithdrawalPayload,
   WithdrawalQueryOptions,
 } from './types';
+import {
+  createLoan,
+  updateLoan,
+  deleteLoan,
+  fetchLoans,
+  fetchLoansByMember,
+} from './functions/loans';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
 
@@ -236,6 +252,30 @@ registerIpcHandler(IPC_CHANNEL_UPDATE_WITHDRAWAL, async (payload: UpdateWithdraw
 
 registerIpcHandler(IPC_CHANNEL_DELETE_WITHDRAWAL, async (payload: DeleteWithdrawalPayload) =>
   deleteWithdrawal(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_LOANS, async (options: LoanQueryOptions) =>
+  fetchLoans(db, options)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_MEMBER_LOANS, async (payload: { memberId: string } & LoanQueryOptions) => {
+  if (!payload?.memberId) {
+    throw new Error('Missing member id payload');
+  }
+  const { memberId, ...rest } = payload;
+  return fetchLoansByMember(db, memberId, rest);
+});
+
+registerIpcHandler(IPC_CHANNEL_ADD_LOAN, async (payload: CreateLoanPayload) =>
+  createLoan(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_UPDATE_LOAN, async (payload: UpdateLoanPayload) =>
+  updateLoan(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_DELETE_LOAN, async (payload: DeleteLoanPayload) =>
+  deleteLoan(db, payload)
 );
 
 app.whenReady().then(() => {

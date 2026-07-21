@@ -29,7 +29,7 @@ export class UserDetails {
     effect(() => {
       const member = this.user();
       const shouldShow = this.showFinancialStatus();
-
+      
       if (!member || !shouldShow) {
         this.financialSummary.set(null);
         this.isFinancialSummaryLoading.set(false);
@@ -59,7 +59,7 @@ export class UserDetails {
     } catch (error) {
       const ipcErrorObj = this.ipcBridgeService.extractIpcError(error);
             
-      this.toastService.error((ipcErrorObj.message || '') as string);
+      this.toastService.error({ message: (ipcErrorObj.message || '') as string });
 
       if (requestId !== this.currentRequestId) {
         return;

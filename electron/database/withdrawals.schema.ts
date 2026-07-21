@@ -1,6 +1,7 @@
 export const CREATE_WITHDRAWALS_TABLE = `
 CREATE TABLE IF NOT EXISTS withdrawals (
   id TEXT PRIMARY KEY,
+  transaction_id TEXT UNIQUE,
   member_id TEXT NOT NULL,
   issuer_id TEXT NOT NULL,
   amount REAL NOT NULL,

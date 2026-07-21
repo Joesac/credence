@@ -56,10 +56,10 @@ export class Login {
 
     try {
       await this.authService.login(payload);
-      this.toastService.success('Login successful. Welcome back!');
+      this.toastService.success({ message: 'Login successful. Welcome back!' });
       await this.router.navigate([PORTAL_DASHBOARD_ROUTE]);
     } catch {
-      this.toastService.error('Invalid username or password. Please try again.');
+      this.toastService.error({ message: 'Invalid username or password. Please try again.' });
     }
   }
 }

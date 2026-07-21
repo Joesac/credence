@@ -3,15 +3,19 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   ELECTRON_API_BRIDGE_KEY,
   IPC_CHANNEL_ADD_DEPOSIT,
+  IPC_CHANNEL_ADD_LOAN,
   IPC_CHANNEL_ADD_MEMBER,
   IPC_CHANNEL_ADD_USER,
   IPC_CHANNEL_ADD_WITHDRAWAL,
   IPC_CHANNEL_DELETE_DEPOSIT,
+  IPC_CHANNEL_DELETE_LOAN,
   IPC_CHANNEL_DELETE_MEMBER,
   IPC_CHANNEL_DELETE_WITHDRAWAL,
   IPC_CHANNEL_GET_DEPOSITS,
+  IPC_CHANNEL_GET_LOANS,
   IPC_CHANNEL_GET_MEMBER_BY_ID,
   IPC_CHANNEL_GET_MEMBER_FINANCIALS,
+  IPC_CHANNEL_GET_MEMBER_LOANS,
   IPC_CHANNEL_GET_MEMBERS,
   IPC_CHANNEL_GET_USERS,
   IPC_CHANNEL_GET_USER_BY_ID,
@@ -19,6 +23,7 @@ import {
   IPC_CHANNEL_LOGIN_USER,
   IPC_CHANNEL_LOGOUT_USER,
   IPC_CHANNEL_UPDATE_DEPOSIT,
+  IPC_CHANNEL_UPDATE_LOAN,
   IPC_CHANNEL_UPDATE_MEMBER,
   IPC_CHANNEL_UPDATE_USER,
   IPC_CHANNEL_UPDATE_WITHDRAWAL,
@@ -60,4 +65,18 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
   addWithdrawal: (payload: { memberId: string; issuerId: string; amount: number; notes?: string | null }) => ipcRenderer.invoke(IPC_CHANNEL_ADD_WITHDRAWAL, payload),
   updateWithdrawal: (payload: { id: string; memberId?: string; issuerId?: string; amount?: number; notes?: string | null }) => ipcRenderer.invoke(IPC_CHANNEL_UPDATE_WITHDRAWAL, payload),
   deleteWithdrawal: (payload: { id: string }) => ipcRenderer.invoke(IPC_CHANNEL_DELETE_WITHDRAWAL, payload),
+
+    /**
+   * Loans bridge
+   */
+  getLoans: (options: { page: number; pageSize: number; includeCancelled?: boolean; memberId?: string; issuerId?: string }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_GET_LOANS, options),
+  getMemberLoans: (options: { page: number; pageSize: number; memberId: string; includeCancelled?: boolean }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_GET_MEMBER_LOANS, options),
+  addLoan: (payload: { memberId: string; issuerId: string; amount: number; interestRate: number; repaymentFrequency: string; dueDate: string; notes?: string | null }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_ADD_LOAN, payload),
+  updateLoan: (payload: { id: string; memberId?: string; issuerId?: string; amount?: number; interestRate?: number; repaymentFrequency?: string; dueDate?: string; notes?: string | null }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_UPDATE_LOAN, payload),
+  deleteLoan: (payload: { id: string }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_DELETE_LOAN, payload),
 });

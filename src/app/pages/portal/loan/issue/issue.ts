@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { form, required, FormField, min } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
@@ -8,12 +8,17 @@ import { UserDetails } from '../../members/components/user-details/user-details'
 import { Member } from '@interfaces/member.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
+import { UtilsService } from '@shared/services/utils-service';
+import { ToastService } from '@core/components/toast/service/toast-service';
+import { AuthService } from '../../../auth/services/auth-service';
+import { LoanService } from '../service/loan-service';
+import { LoanPayload } from '@interfaces/loan.interface';
 
 interface LoanIssueData {
   amount: number | null;
   interestRate: number | null;
   repaymentFrequency: string;
-  dueDate: string;
+  dueDate: string | Date | null;
   notes: string;
 }
 
@@ -33,29 +38,34 @@ interface LoanIssueData {
   styleUrl: './issue.scss',
 })
 export class Issue {
+  private readonly toastService = inject(ToastService);
+  private readonly authService = inject(AuthService);
+  private readonly loanService = inject(LoanService);
+  private readonly utilsService = inject(UtilsService);
+
+  private readonly userDetailsComponent = viewChild(UserDetails);
 
   protected readonly REPAYMENT_FREQUENCIES = [
     { label: 'Weekly', value: 'weekly' },
-    { label: 'Montly', value: 'montly' }
-  ];
-
-  protected readonly INTEREST_RATES = [
-    { label: '10', value: 'weekly' },
-    { label: 'Montly', value: 'montly' }
+    { label: 'Monthly', value: 'monthly' }
   ];
 
   protected readonly selectedMember = signal<Member | null>(null);
+  protected readonly isSubmitting = signal(false);
 
-  private INITIAL_DATA = <LoanIssueData>({
+  // Disable all dates before this date in the date picker which is today
+  protected minDate: Date = new Date();
+
+  private readonly INITIAL_DATA: LoanIssueData = {
     amount: null,
     interestRate: null,
     repaymentFrequency: 'weekly',
-    dueDate: '',
-    notes: ''
-  });
-  
-  protected readonly LoanIssueModel = signal<LoanIssueData>(this.INITIAL_DATA);
-  protected loanIssueForm = form(this.LoanIssueModel, (path) => {
+    dueDate: null,
+    notes: '',
+  };
+
+  protected readonly loanIssueModel = signal<LoanIssueData>(this.INITIAL_DATA);
+  protected loanIssueForm = form(this.loanIssueModel, (path) => {
     required(path.amount, {
       message: 'Amount is required'
     });
@@ -64,23 +74,83 @@ export class Issue {
     required(path.interestRate, {
       message: 'Interest Rate is required'
     });
-    min(path.amount, 1, { message: 'Minimum amount is 1' });
+    min(path.interestRate, 1, { message: 'Minimum interest rate is 1' });
 
     required(path.repaymentFrequency, { message: 'Repayment frequency is required' });
 
-    // @Todo: Change this to a date picker;
     required(path.dueDate, { message: 'Due date is required' });
   });
 
   protected onSelectMember(member: Member | null) {
-    console.log(member);
     this.selectedMember.set(member);
+    this.resetForm();
   }
 
-  protected onSubmit(event: Event) {
+  protected async onSubmit(event: Event) {
     event.preventDefault();
-    if (this.loanIssueForm().invalid()) return;
-    console.log('Model payload', this.loanIssueForm().value());
+    if (this.loanIssueForm().invalid()) {
+      this.toastService.error({ message: 'Please complete all required fields.' });
+      return;
+    }
+
+    const member = this.selectedMember();
+    if (!member) {
+      this.toastService.error({ message: 'Select a member before issuing a loan.' });
+      return;
+    }
+
+    if (this.isSubmitting()) {
+      return;
+    }
+
+    let issuerId: string;
+    try {
+      const activeUser = await this.authService.getActiveUser();
+      issuerId = activeUser.id;
+    } catch (error) {
+      await this.authService.handleAuthError(error, this.toastService);
+      return;
+    }
+
+    const { amount, interestRate, repaymentFrequency, dueDate, notes } = this.loanIssueForm().value();
+    const normalizedDueDate = this.utilsService.normalizeDueDate(dueDate);
+    
+    if (!normalizedDueDate) {
+      this.toastService.error({ message: 'Please choose a valid due date.' });
+      return;
+    }
+
+    const payload: LoanPayload = {
+      memberId: member.id,
+      issuerId,
+      amount: Number(amount),
+      interestRate: Number(interestRate),
+      repaymentFrequency,
+      dueDate: normalizedDueDate,
+      notes: notes?.trim() ? notes.trim() : null,
+    };
+
+    this.isSubmitting.set(true);
+    try {
+      await this.loanService.addLoan(payload);
+      this.toastService.success({ message: 'Loan issued successfully.' });
+      this.resetForm();
+      this.userDetailsComponent()?.refreshFinancialSummary();
+    } catch (error) {
+      const ipcError = this.loanService.extractIpcError(error);
+      const message = (ipcError.message as string) || 'Unable to issue loan. Please try again.';
+
+      let header = '';
+      if (ipcError.code === 'HAS_EXISTING_LOAN') {
+        header = "Cannot Issue Loan";
+      }
+      this.toastService.error({ message, header });
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
+
+  private resetForm() {
     this.loanIssueForm().reset({ ...this.INITIAL_DATA });
   }
 }

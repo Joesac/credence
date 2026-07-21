@@ -1,6 +1,7 @@
 export const CREATE_DEPOSITS_TABLE = `
 CREATE TABLE IF NOT EXISTS deposits (
   id TEXT PRIMARY KEY,
+  transaction_id TEXT UNIQUE,
   member_id TEXT NOT NULL,
   received_by TEXT NOT NULL,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'momo')),

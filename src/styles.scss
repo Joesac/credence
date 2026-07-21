@@ -16,8 +16,65 @@
   --color-muted: #6C7488;
   --color-hover: #F3F4F6;
   --color-secondary: #F49236;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  // --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --rounded-normal: .5rem;
+
+
+  /* ==========================================================================
+  Color Palette (Extracted from "light theme.webp")
+  ========================================================================== */
+
+  /* The outer canvas/page background behind panels and cards */
+  --color-canvas: #f3f4f6;
+
+  /* Sidebars, cards, white input fields, and main content panels */
+  --color-surface: #ffffff;
+
+  /* The prominent ink-black/deep navy color of primary buttons (e.g. "Save") and text */
+  --color-brand-primary: #0a1120;
+  --color-brand-primary-hover: #1e293b;
+
+  /* Soft grey used for secondary actions (e.g. "Duplicate" button) and input backgrounds */
+  --color-brand-secondary: #f4f5f6;
+  --color-brand-secondary-hover: #e9ebed;
+
+  /* Subtle border color separating cards, inputs, and tables */
+  --color-ui-border: #e4e6eb;
+
+  /* Typography color scale /
+  --color-text-primary: #0f172a;    / Headings, active states, labels /
+  --color-text-secondary: #5e6b7c;  / Body text, descriptions, placeholders /
+  --color-text-muted: #94a3b8;      / Unfocused metadata, inactive icons */
+
+  /* Feedback colors (Warning, Success, and Selection states) */
+  --color-accent-success: #10b981;
+  --color-accent-warning: #f59e0b;
+
+  /* ==========================================================================
+  Layout & Border Radius (Matching the rounded aesthetic)
+  ========================================================================== */
+
+  /* Soft rounding of input fields and dropdown components */
+  --radius-input: 6px;
+
+  /* Rounded styling applied to content cards, product image sections, and sidebar active hover blocks */
+  --radius-card: 10px;
+
+  /* Rounded styling applied to the main wrapper/panel content layout */
+  --radius-panel: 14px;
+
+  /* ==========================================================================
+  Shadows (Matches the ultra-flat, clean profile)
+  ========================================================================== */
+
+  /* Minimal border-like shadow typical of modern, flat SaaS designs */
+  --shadow-flat: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+
+  /* ==========================================================================
+  Typography
+  ========================================================================== */
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 // 2. Base resets

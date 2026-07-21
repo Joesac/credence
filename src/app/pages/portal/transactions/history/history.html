@@ -9,15 +9,74 @@
             @if (selectedMember(); as member) {
                 <app-user-details [user]="member" />
             }
-
-            <app-data-table 
-                [data]="transactionRows()"
-                [columns]="transactionColumns"
-                [loading]="isLoadingHistory()"
-                loadingMessage="Loading transaction history..."
-                [emptyMessage]="tableEmptyMessage()"
-            />
         </section>
+
+        <mat-tab-group
+            dynamicHeight
+            animationDuration="0ms"
+            mat-stretch-tabs="false" 
+            mat-align-tabs="start">
+            <mat-tab label="Deposits">
+                <app-data-table 
+                    [data]="depositRows()"
+                    [columns]="transactionColumns"
+                    [loading]="isLoadingDeposits()"
+                    loadingMessage="Loading deposit history..."
+                    [emptyMessage]="depositEmptyMessage()"
+                    [(currentPage)]="depositPage"
+                    [(pageSize)]="depositPageSize"
+                    [totalRecords]="depositTotalRecords()"
+                >
+                    <ng-template appDataTableCell="isCancelled" let-row>
+                        @if (row.isCancelled) {
+                            <div class="bg-red-100 text-red-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Cancelled</div>
+                        } @else {
+                            <div class="bg-green-100 text-green-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Open</div>
+                        }
+                    </ng-template>
+
+                    <ng-template appDataTableCell="action" let-row>
+                        @if (!row.isCancelled) {
+                            <app-actions-button
+                                [actions]="transactionActions"
+                                [isProcessing]="cancellingDepositId() === row.id"
+                                (onActionSelected)="handleTransactionAction($event, row)"
+                            />
+                        }
+                    </ng-template>
+                </app-data-table>
+            </mat-tab>
+            <mat-tab label="Withdrawals">
+                <app-data-table 
+                    [data]="withdrawalRows()"
+                    [columns]="transactionColumns"
+                    [loading]="isLoadingWithdrawals()"
+                    loadingMessage="Loading withdrawal history..."
+                    [emptyMessage]="withdrawalEmptyMessage()"
+                    [(currentPage)]="withdrawalPage"
+                    [(pageSize)]="withdrawalPageSize"
+                    [totalRecords]="withdrawalTotalRecords()"
+                >
+                    <ng-template appDataTableCell="isCancelled" let-row>
+                        @if (row.isCancelled) {
+                            <div class="bg-red-100 text-red-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Cancelled</div>
+                        } @else {
+                            <div class="bg-green-100 text-green-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Open</div>
+                        }
+                    </ng-template>
+
+                    <ng-template appDataTableCell="action" let-row>
+                        @if (!row.isCancelled) {
+                            <app-actions-button
+                                [actions]="transactionActions"
+                                [isProcessing]="cancellingWithdrawalId() === row.id"
+                                (onActionSelected)="handleTransactionAction($event, row)"
+                            />
+                        }
+                    </ng-template>
+                </app-data-table>
+            </mat-tab>
+        </mat-tab-group>
     } @else {
         <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
             Select a member to preview their profile and history.

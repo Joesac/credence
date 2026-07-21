@@ -53,6 +53,7 @@ export const MEMBER_BASE_COLUMNS = `
 
 export const DEPOSIT_BASE_COLUMNS = `
   id,
+  transaction_id,
   member_id,
   received_by,
   payment_method,
@@ -66,6 +67,7 @@ export const DEPOSIT_BASE_COLUMNS = `
 
 export const WITHDRAWAL_BASE_COLUMNS = `
   id,
+  transaction_id,
   member_id,
   issuer_id,
   amount,
@@ -74,6 +76,20 @@ export const WITHDRAWAL_BASE_COLUMNS = `
   date_created,
   date_updated,
   is_synced
+`;
+
+export const LOAN_BASE_COLUMNS = `
+  loans.id,
+  loans.member_id,
+  loans.issuer_id,
+  loans.amount,
+  loans.interest_rate,
+  loans.repayment_frequency,
+  loans.due_date,
+  loans.notes,
+  loans.is_cancelled,
+  loans.date_created,
+  loans.is_synced
 `;
 
 /**
@@ -108,3 +124,8 @@ export const IPC_CHANNEL_ADD_WITHDRAWAL = 'add-withdrawal';
 export const IPC_CHANNEL_UPDATE_WITHDRAWAL = 'update-withdrawal';
 export const IPC_CHANNEL_DELETE_WITHDRAWAL = 'delete-withdrawal';
 export const IPC_CHANNEL_GET_MEMBER_FINANCIALS = 'get-member-financials';
+export const IPC_CHANNEL_GET_LOANS = 'get-loans';
+export const IPC_CHANNEL_GET_MEMBER_LOANS = 'get-member-loans';
+export const IPC_CHANNEL_ADD_LOAN = 'add-loan';
+export const IPC_CHANNEL_UPDATE_LOAN = 'update-loan';
+export const IPC_CHANNEL_DELETE_LOAN = 'delete-loan';

@@ -17,3 +17,21 @@ export function addColumnIfMissing(
   }
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
 }
+
+function indexExists(db: Database.Database, table: string, indexName: string): boolean {
+  const indexListStmt = db.prepare(`PRAGMA index_list(${table})`);
+  const indexes = indexListStmt.all() as { name: string }[];
+  return indexes.some(index => index.name === indexName);
+}
+
+export function createUniqueIndexIfMissing(
+  db: Database.Database,
+  table: string,
+  indexName: string,
+  expression: string
+): void {
+  if (indexExists(db, table, indexName)) {
+    return;
+  }
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON ${table} ${expression}`);
+}

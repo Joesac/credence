@@ -63,13 +63,13 @@ export class Deposit {
     event.preventDefault();
 
     if (this.depositForm().invalid()) {
-      this.toastService.error('Please complete all required fields.');
+      this.toastService.error({ message: 'Please complete all required fields.' });
       return;
     }
 
     const member = this.selectedMember();
     if (!member) {
-      this.toastService.error('Select a member before recording a deposit.');
+      this.toastService.error({ message: 'Select a member before recording a deposit.' });
       return;
     }
 
@@ -82,14 +82,7 @@ export class Deposit {
       const activeUser = await this.authService.getActiveUser();
       receivedBy = activeUser.id;
     } catch (error) {
-      console.error('Unable to verify active session', error);
-      const message = error instanceof Error ? error.message : '';
-      if (message === 'NOT_AUTHENTICATED' || message === 'SESSION_EXPIRED') {
-        await this.authService.logout();
-        this.toastService.error('Session expired. Please log in again.');
-      } else {
-        this.toastService.error('Unable to verify your session. Please try again.');
-      }
+      await this.authService.handleAuthError(error, this.toastService);
       return;
     }
 
@@ -105,12 +98,12 @@ export class Deposit {
     this.isSubmitting.set(true);
     try {
       await this.depositService.addDeposit(payload);
-      this.toastService.success('Deposit recorded successfully.');
+      this.toastService.success({ message: 'Deposit recorded successfully.' });
       this.depositForm().reset({ ...this.INITIAL_DATA });
       this.userDetailsComponent()?.refreshFinancialSummary();
     } catch (error) {
       console.error('Deposit submission failed', error);
-      this.toastService.error('Unable to record deposit. Please try again.');
+      this.toastService.error({ message: 'Unable to record deposit. Please try again.' });
     } finally {
       this.isSubmitting.set(false);
     }

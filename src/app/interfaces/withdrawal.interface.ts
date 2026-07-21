@@ -13,6 +13,7 @@ export interface WithdrawalUpdatePayload extends Partial<WithdrawalPayload> {
 
 export interface Withdrawal {
   id: string;
+  transaction_id: string | null;
   member_id: string;
   issuer_id: string;
   amount: number;

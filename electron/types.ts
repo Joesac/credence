@@ -113,6 +113,32 @@ export interface MemberFinancialSummary {
   availableBalance: number;
 }
 
+export interface CreateLoanPayload {
+  memberId: string;
+  issuerId: string;
+  amount: number;
+  interestRate: number;
+  repaymentFrequency: string;
+  dueDate: string;
+  notes?: string | null;
+}
+
+export interface UpdateLoanPayload extends Partial<Omit<CreateLoanPayload, 'memberId' | 'issuerId'>> {
+  id: string;
+  memberId?: string;
+  issuerId?: string;
+}
+
+export interface DeleteLoanPayload {
+  id: string;
+}
+
+export interface LoanQueryOptions extends PaginationRequest {
+  includeCancelled?: boolean;
+  memberId?: string;
+  issuerId?: string;
+}
+
 export interface PaginationRequest {
   page: number;
   pageSize: number;
@@ -165,6 +191,7 @@ export type SanitizedMember = DbMemberRow;
 
 export type DbDepositRow = {
   id: string;
+  transaction_id: string | null;
   member_id: string;
   received_by: string;
   payment_method: DepositPaymentMethod;
@@ -180,6 +207,7 @@ export type SanitizedDeposit = DbDepositRow;
 
 export type DbWithdrawalRow = {
   id: string;
+  transaction_id: string | null;
   member_id: string;
   issuer_id: string;
   amount: number;
@@ -191,6 +219,26 @@ export type DbWithdrawalRow = {
 };
 
 export type SanitizedWithdrawal = DbWithdrawalRow;
+
+export type DbLoanRow = {
+  id: string;
+  member_id: string;
+  issuer_id: string;
+  amount: number;
+  interest_rate: number;
+  repayment_frequency: string;
+  due_date: string;
+  notes: string | null;
+  is_cancelled: number;
+  date_created: string;
+  is_synced: number;
+};
+
+export type SanitizedLoan = DbLoanRow & {
+  computedInterestAmount: number;
+  outstandingBalance: number;
+  totalRepaid: number;
+};
 
 export interface SerializedError {
   code: string;

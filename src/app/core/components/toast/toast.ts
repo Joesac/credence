@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { MatSnackBar, MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 
 export interface SnackbarData {
+  header?: string;
   message: string;
   type: 'success' | 'error';
   actionLabel?: string;

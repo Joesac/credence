@@ -67,7 +67,7 @@ export class Register {
     
     if (this.registerForm().invalid() || this.isSubmitting()) {
       if (this.registerForm().invalid()) {
-        this.toastService.error('Please complete all required fields.');
+        this.toastService.error({ message: 'Please complete all required fields.' });
       }
       return;
     }
@@ -77,16 +77,9 @@ export class Register {
       const activeUser = await this.authService.getActiveUser();
       creatorId = activeUser.id;
     } catch (error) {
-      console.error('Active session validation failed', error);
-      const message = error instanceof Error ? error.message : '';
-      const sessionError = message === 'NOT_AUTHENTICATED' || message === 'SESSION_EXPIRED';
-
-      if (sessionError) {
-        await this.authService.logout();
-        this.toastService.error('Your session has expired. Please log in again.');
-      } else {
-        this.toastService.error('Unable to verify your session. Please try again.');
-      }
+      await this.authService.handleAuthError(error, this.toastService, {
+        expired: 'Your session has expired. Please log in again.',
+      });
       return;
     }
 
@@ -101,11 +94,11 @@ export class Register {
     this.isSubmitting.set(true);
     try {
       await this.memberService.addMember(memberPayload);
-      this.toastService.success('Member registered successfully.');
+      this.toastService.success({ message: 'Member registered successfully.' });
       this.registerForm().reset({ ...this.INITIAL_DATA });
     } catch (error) {
       console.error('Member registration failed', error);
-      this.toastService.error('Unable to register member. Please try again.');
+      this.toastService.error({ message: 'Unable to register member. Please try again.' });
     } finally {
       this.isSubmitting.set(false);
     }

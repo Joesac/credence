@@ -16,6 +16,7 @@ export interface DepositUpdatePayload extends Partial<DepositPayload> {
 
 export interface Deposit {
   id: string;
+  transaction_id: string | null;
   member_id: string;
   received_by: string;
   payment_method: DepositPaymentMethod;

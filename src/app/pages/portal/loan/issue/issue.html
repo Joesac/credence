@@ -7,6 +7,7 @@
         <section class="mt-4 flex flex-col gap-4 w-full">
             <app-user-details
                 [user]="selectedMember()!"
+                [showFinancialStatus]="true"
             />
 
             <form (submit)="onSubmit($event)">
@@ -34,7 +35,15 @@
                     <div class="flex flex-col gap-0.5">
                         <mat-label>Choose a date</mat-label>
                         <mat-form-field>
-                            <input matInput [matDatepicker]="picker" [formField]="loanIssueForm.dueDate">
+                            <input 
+                                matInput 
+                                readonly 
+                                [min]="minDate" 
+                                [matDatepicker]="picker" 
+                                [formField]="loanIssueForm.dueDate"
+                                (keydown)="$event.preventDefault()"
+                                (click)="picker.open()"
+                            >
                             <mat-hint>MM/DD/YYYY</mat-hint>
                             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
                             <mat-datepicker #picker></mat-datepicker>
@@ -52,8 +61,8 @@
                         <button
                             type="submit"
                             class="btn-primary"
-                            [disabled]="loanIssueForm().invalid()"
-                        >Make Deposit</button>
+                            [disabled]="loanIssueForm().invalid() || isSubmitting()"
+                        >{{ isSubmitting() ? 'Issuing Loan...' : 'Issue Loan' }}</button>
                     </div>
                 </div>
             </form>

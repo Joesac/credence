@@ -7,6 +7,12 @@ export interface SnackbarAction {
   callback: () => void;
 }
 
+interface SnackbarArgs {
+  message: string;
+  header?: string;
+  action?: SnackbarAction;
+}
+
 @Service()
 export class ToastService {
      private snackBar = inject(MatSnackBar);
@@ -14,31 +20,32 @@ export class ToastService {
   /**
    * Triggers a green success toast
    */
-  success(message: string, action?: SnackbarAction): void {
-    this.show(message, 'success', action);
+  success({ message, header, action }: SnackbarArgs): void {
+    this.show(message, 'success', header, action);
   }
 
   /**
    * Triggers a red error/critical warning toast
    */
-  error(message: string, action?: SnackbarAction): void {
-    this.show(message, 'error', action);
+  error({ message, header, action }: SnackbarArgs): void {
+    this.show(message, 'error', header, action);
   }
 
   /**
    * Orchestrates the MatSnackBar logic
    */
-  private show(message: string, type: 'success' | 'error', action?: SnackbarAction): void {
+  private show(message: string, type: 'success' | 'error', header?: string, action?: SnackbarAction): void {
     const ref = this.snackBar.openFromComponent(ToastComponent, {
       duration: 5000, // Default display time of 5 seconds
       data: {
         message,
         type,
-        actionLabel: action?.label
+        actionLabel: action?.label,
+        header
       },
       panelClass: ['custom-toast-container'],
-      horizontalPosition: 'right',
-      verticalPosition: 'bottom'
+      horizontalPosition: 'center',
+      verticalPosition: 'top'
     });
 
     // If an action callback config was provided, handle clicking the action button
