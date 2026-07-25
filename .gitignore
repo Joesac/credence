@@ -6,6 +6,9 @@
 /out-tsc
 /bazel-out
 /dist-electron
+local.db
+local.db-shm
+local.db-wal
 
 # Node
 /node_modules

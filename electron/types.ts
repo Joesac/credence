@@ -27,6 +27,7 @@ export interface LogoutUserPayload {
 
 export interface UpdateUserPayload {
   id: string;
+  currentPassword?: string;
   fullname?: string;
   username?: string;
   password?: string;
@@ -139,6 +140,24 @@ export interface LoanQueryOptions extends PaginationRequest {
   issuerId?: string;
 }
 
+export interface CreateLoanRepaymentPayload {
+  loanId: string;
+  receiverId: string;
+  amount: number;
+  notes?: string | null;
+}
+
+export interface UpdateLoanRepaymentPayload {
+  id: string;
+  amount?: number;
+  notes?: string | null;
+  isCancelled?: boolean;
+}
+
+export interface DeleteLoanRepaymentPayload {
+  id: string;
+}
+
 export interface PaginationRequest {
   page: number;
   pageSize: number;
@@ -219,6 +238,37 @@ export type DbWithdrawalRow = {
 };
 
 export type SanitizedWithdrawal = DbWithdrawalRow;
+
+export type DbLoanRepaymentRow = {
+  id: string;
+  loan_id: string;
+  receiver_id: string;
+  amount: number;
+  notes: string | null;
+  is_cancelled: number;
+  date_created: string;
+  is_synced: number;
+};
+
+export type LoanRepaymentRelation = {
+  id: string;
+  fullname: string;
+  username?: string | null;
+};
+
+export type LoanRepaymentLoanDetails = {
+  id: string;
+  amount: number;
+  member_id: string;
+  member_name: string | null;
+  issuer_id: string;
+  issuer_name: string | null;
+};
+
+export type SanitizedLoanRepayment = DbLoanRepaymentRow & {
+  receiver?: LoanRepaymentRelation | null;
+  loan?: LoanRepaymentLoanDetails | null;
+};
 
 export type DbLoanRow = {
   id: string;

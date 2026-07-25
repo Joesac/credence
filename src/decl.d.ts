@@ -19,6 +19,9 @@ import {
   LoanPayload,
   LoanUpdatePayload,
   PaginatedLoans,
+  LoanRepayment,
+  LoanRepaymentPayload,
+  PaginatedLoanRepayments,
 } from '@interfaces/loan.interface';
 
 export interface ElectronAPI {
@@ -27,7 +30,7 @@ export interface ElectronAPI {
   getUserById: (payload: { id: string }) => Promise<User | null>;
   loginUser: (payload: { username: string; password: string }) => Promise<User>;
   logoutUser: (payload: { userId: string }) => Promise<{ success: boolean }>;
-  updateUser: (payload: { id: string; fullname?: string; username?: string; password?: string }) => Promise<User>;
+  updateUser: (payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string }) => Promise<User>;
   getMembers: (payload: PaginationRequest) => Promise<PaginatedResponse<Member>>;
   getMemberById: (payload: { id: string }) => Promise<any>;
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => Promise<any>;
@@ -47,6 +50,10 @@ export interface ElectronAPI {
   addLoan: (payload: LoanPayload) => Promise<Loan>;
   updateLoan: (payload: LoanUpdatePayload) => Promise<Loan | null>;
   deleteLoan: (payload: { id: string }) => Promise<{ success: boolean }>;
+  getLoanRepaymentsByLoanId: (payload: { loanId: string; page: number; pageSize: number }) => Promise<PaginatedLoanRepayments>;
+  addLoanRepayment: (payload: LoanRepaymentPayload) => Promise<LoanRepayment | null>;
+  updateLoanRepayment: (payload: { id: string; amount?: number; notes?: string | null; isCancelled?: boolean }) => Promise<LoanRepayment | null>;
+  deleteLoanRepayment: (payload: { id: string }) => Promise<{ success: boolean }>;
 }
 
 declare global {

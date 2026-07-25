@@ -7,6 +7,9 @@ import {
   PaginatedLoans,
   LoanQueryOptions,
   MemberLoanQueryOptions,
+  LoanRepaymentPayload,
+  LoanRepayment,
+  PaginatedLoanRepayments,
 } from '@interfaces/loan.interface';
 import { PaginationRequest } from '@interfaces/pagination.interface';
 
@@ -45,5 +48,26 @@ export class LoanService extends IpcBridgeService {
    */
   deleteLoan(id: string): Promise<{ success: boolean }> {
     return this.executeIPC(api => api.deleteLoan({ id }));
+  }
+
+  /**
+   * Records a repayment for a specific loan.
+   */
+  addLoanRepayment(payload: LoanRepaymentPayload): Promise<LoanRepayment | null> {
+    return this.executeIPC(api => api.addLoanRepayment(payload));
+  }
+
+  /**
+   * Updates an existing loan repayment record (amount, notes, or cancellation status).
+   */
+  updateLoanRepayment(payload: { id: string; amount?: number; notes?: string | null; isCancelled?: boolean }): Promise<LoanRepayment | null> {
+    return this.executeIPC(api => api.updateLoanRepayment(payload));
+  }
+
+  /**
+   * Lists repayments for a specific loan (paged).
+   */
+  getLoanRepaymentsByLoanId(payload: { loanId: string; page: number; pageSize: number }): Promise<PaginatedLoanRepayments> {
+    return this.executeIPC(api => api.getLoanRepaymentsByLoanId(payload));
   }
 }

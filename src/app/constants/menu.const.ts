@@ -43,5 +43,14 @@ export const MENU: Menu[] = [
       { id: 'monthly', label: 'Monthly Summaries', isActive: false }
     ]
   },
-  { id: 'portal/settings', label: 'Settings', icon: 'cog', isActive: false }
+  {
+    id: 'portal/settings',
+    label: 'Settings',
+    icon: 'cog',
+    isActive: false,
+    children: [
+      { id: 'user-details', label: 'User Details', isActive: false },
+    ]
+  },
+  // { id: 'portal/settings', label: 'Settings', icon: 'cog', isActive: false }
 ];

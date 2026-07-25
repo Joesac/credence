@@ -1,0 +1,55 @@
+
+<section class="card mt-6">
+  <header class="mb-8">
+    <h1 class="text-2xl font-semibold text-slate-900">User Details</h1>
+    <p class="text-slate-500 mt-1 text-sm">Update your personal information and account credentials.</p>
+  </header>
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-8">
+      <span class="text-slate-500">Loading details...</span>
+    </div>
+  } @else {
+    <form class="space-y-6" (submit)="onSubmit($event)">
+      <app-inputfield
+        [formField]="detailsForm.fullName"
+        label="Fullname"
+        placeholder="Enter your full name"
+      />
+
+      <app-inputfield
+        [formField]="detailsForm.username"
+        label="Username"
+        placeholder="Enter your username"
+      />
+
+      <hr class="border-slate-100 my-6" />
+
+      <app-inputfield
+        [formField]="detailsForm.currentPassword"
+        label="Current Password"
+        type="password"
+        placeholder="Enter your current password to verify"
+        hint="Required to apply any changes."
+      />
+
+      <app-inputfield
+        [formField]="detailsForm.password"
+        label="New Password"
+        type="password"
+        placeholder="Enter new password (leave blank to keep current)"
+        hint="Only fill this if you want to change your password."
+      />
+
+      <div class="flex justify-end pt-4">
+        <button
+          type="submit"
+          class="btn-primary px-8"
+          [disabled]="detailsForm().invalid() || isSubmitting()"
+        >
+          {{ isSubmitting() ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

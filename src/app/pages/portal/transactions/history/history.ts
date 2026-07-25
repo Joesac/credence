@@ -36,7 +36,7 @@ type HistoryTransaction = {
   ],
   templateUrl: './history.html',
   styleUrl: './history.scss',
-  host: { 'class': 'w-full flex' }
+  host: { 'class': 'w-full flex justify-center' }
 })
 export class History {
   private readonly utilsService = inject(UtilsService);
@@ -103,7 +103,7 @@ export class History {
     {
       key: 'amount',
       header: 'Amount',
-      formatter: (row) => this.utilsService.currencyFormatter.format(row.amount)
+      formatter: (row) => this.utilsService.formatCurrency(row.amount)
     },
     { key: 'action', header: '' }
   ];

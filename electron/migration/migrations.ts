@@ -71,9 +71,18 @@ const updateLoanRepaymentsSchema: Migration = {
   },
 };
 
+const addLoanRepaymentCancellationColumn: Migration = {
+  id: '20240722_add_loan_repayment_cancellation_column',
+  description: 'Add is_cancelled column to loan_repayments table',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'loan_repayments', 'is_cancelled', 'is_cancelled INTEGER NOT NULL DEFAULT 0');
+  },
+};
+
 export const MIGRATIONS: Migration[] = [
   migrateWithdrawalsColumns,
   addTransactionIdColumns,
   addLoanCancellationColumn,
   updateLoanRepaymentsSchema,
+  addLoanRepaymentCancellationColumn,
 ];

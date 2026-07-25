@@ -1,10 +1,18 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
+import { MatButtonModule } from "@angular/material/button";
 import { UserDetails } from '../../members/components/user-details/user-details';
 import { Member } from '@interfaces/member.interface';
+import { Loan } from '@interfaces/loan.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
+import { LoanSelectionDropdownComponent } from '@shared/components/loan-selection-dropdown-component/loan-selection-dropdown-component';
 import { LoanDetails, LoanDetailsData } from '../components/loan-details/loan-details';
+import { ToastService } from '@core/components/toast/service/toast-service';
+import { UtilsService } from '@shared/services/utils-service';
+import { AuthService } from '../../../auth/services/auth-service';
+import { LoanService } from '../service/loan-service';
+import { LoanRepaymentList } from '../components/loan-repayment-list/loan-repayment-list';
 
 interface repaymentData {
   amount: number | null;
@@ -14,24 +22,45 @@ interface repaymentData {
 @Component({
   selector: 'app-repayment',
    imports: [
+    MatButtonModule,
     FormField, 
     UserDetails, 
     Inputfield, 
     MemberSelectionDropdown,
-    LoanDetails
+    LoanSelectionDropdownComponent,
+    LoanDetails,
+    LoanRepaymentList
   ],
   templateUrl: './repayment.html',
-  styleUrl: './repayment.scss',
-  host: { 'class': 'w-full flex justify-center' }
+  styleUrl: './repayment.scss'
 })
 export class Repayment {
+  private readonly toastService = inject(ToastService);
+  private readonly authService = inject(AuthService);
+  private readonly loanService = inject(LoanService);
+  private readonly utilService = inject(UtilsService);
+
+  private readonly userDetailsComponent = viewChild(UserDetails);
+  private readonly loanDropdownComponent = viewChild(LoanSelectionDropdownComponent);
+
+  protected readonly viewRepayments = signal(false);
+
   protected readonly selectedMember = signal<Member | null>(null);
-  
-  protected readonly loanDetails = signal<LoanDetailsData>({ 
-    amountLoaned: 570, 
-    rate: 15, 
-    dueDate: '2026-07-03T14:42:00Z', 
-    amountPaid: 200 
+  protected readonly selectedLoan = signal<Loan | null>(null);
+  protected readonly isSubmitting = signal(false);
+  protected readonly loanDetails = computed<LoanDetailsData | null>(() => {
+    const loan = this.selectedLoan();
+    if (!loan) {
+      return null;
+    }
+
+    return {
+      amountLoaned: loan.amount,
+      rate: loan.interest_rate,
+      dueDate: loan.due_date,
+      dateCreated: loan.date_created,
+      amountPaid: loan.totalRepaid,
+    };
   });
 
   private INITIAL_DATA = <repaymentData>({
@@ -47,14 +76,92 @@ export class Repayment {
   });
 
   protected onSelectMember(member: Member | null) {
-    console.log(member);
     this.selectedMember.set(member);
+    this.selectedLoan.set(null);
   }
 
-  protected onSubmit(event: Event) {
+  protected onSelectLoan(loan: Loan | null) {
+    this.selectedLoan.set(loan);
+  }
+
+    protected async onSubmit(event: Event) {
     event.preventDefault();
-    if (this.repaymentForm().invalid()) return;
-    console.log('Model payload', this.repaymentForm().value());
-    this.repaymentForm().reset({ ...this.INITIAL_DATA });
+
+    if (this.repaymentForm().invalid()) {
+      this.toastService.error({ message: 'Enter a valid repayment amount before submitting.' });
+      return;
+    }
+
+    const member = this.selectedMember();
+    if (!member) {
+      this.toastService.error({ message: 'Select a member before recording repayments.' });
+      return;
+    }
+
+    const loan = this.selectedLoan();
+    if (!loan) {
+      this.toastService.error({ message: 'Select a loan to apply this repayment.' });
+      return;
+    }
+
+    if (this.isSubmitting()) {
+      return;
+    }
+
+    let receiverId: string;
+    try {
+      const activeUser = await this.authService.getActiveUser();
+      receiverId = activeUser.id;
+    } catch (error) {
+      await this.authService.handleAuthError(error, this.toastService);
+      return;
+    }
+
+    const { amount, notes } = this.repaymentForm().value();
+    const normalizedAmount = Number(amount);
+    const payload = {
+      loanId: loan.id,
+      receiverId,
+      amount: normalizedAmount,
+      notes: notes?.trim() ? notes.trim() : null,
+    };
+
+    this.isSubmitting.set(true);
+    try {
+      await this.loanService.addLoanRepayment(payload);
+      this.toastService.success({ message: `Repayment of ${this.formatCurrency(normalizedAmount)} recorded.` });
+      this.repaymentForm().reset({ ...this.INITIAL_DATA });
+      await this.refreshSelectedLoanDetails(member.id, loan.id);
+      this.loanDropdownComponent()?.refreshLoans();
+      this.userDetailsComponent()?.refreshFinancialSummary();
+    } catch (error) {
+      console.error('Repayment submission failed', error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to record repayment. Please try again.';
+      this.toastService.error({ message });
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
+
+  private formatCurrency(amount: number): string {
+    return this.utilService.formatCurrency(amount);
+  }
+
+  private async refreshSelectedLoanDetails(memberId: string, loanId: string): Promise<void> {
+    try {
+      const response = await this.loanService.getMemberLoans({
+        page: 1,
+        pageSize: 20,
+        memberId,
+        includeCancelled: false,
+      });
+      const refreshed = response.data.find(item => item.id === loanId) ?? null;
+      this.selectedLoan.set(refreshed);
+    } catch (error) {
+      console.error('Unable to refresh loan after repayment', error);
+    }
   }
 }

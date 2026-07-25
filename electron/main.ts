@@ -18,6 +18,10 @@ import {
   IPC_CHANNEL_ADD_WITHDRAWAL,
   IPC_CHANNEL_DELETE_DEPOSIT,
   IPC_CHANNEL_DELETE_LOAN,
+  IPC_CHANNEL_ADD_LOAN_REPAYMENT,
+  IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID,
+  IPC_CHANNEL_UPDATE_LOAN_REPAYMENT,
+  IPC_CHANNEL_DELETE_LOAN_REPAYMENT,
   IPC_CHANNEL_DELETE_MEMBER,
   IPC_CHANNEL_DELETE_WITHDRAWAL,
   IPC_CHANNEL_GET_DEPOSITS,
@@ -87,6 +91,10 @@ import {
   UpdateLoanPayload,
   UpdateWithdrawalPayload,
   WithdrawalQueryOptions,
+  CreateLoanRepaymentPayload,
+  UpdateLoanRepaymentPayload,
+  DeleteLoanRepaymentPayload,
+  PaginationRequest,
 } from './types';
 import {
   createLoan,
@@ -94,6 +102,10 @@ import {
   deleteLoan,
   fetchLoans,
   fetchLoansByMember,
+  fetchLoanRepaymentsByLoanId,
+  createLoanRepayment,
+  updateLoanRepayment,
+  deleteLoanRepayment,
 } from './functions/loans';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
@@ -277,6 +289,25 @@ registerIpcHandler(IPC_CHANNEL_UPDATE_LOAN, async (payload: UpdateLoanPayload) =
 registerIpcHandler(IPC_CHANNEL_DELETE_LOAN, async (payload: DeleteLoanPayload) =>
   deleteLoan(db, payload)
 );
+
+registerIpcHandler(IPC_CHANNEL_ADD_LOAN_REPAYMENT, async (payload: CreateLoanRepaymentPayload) =>
+  createLoanRepayment(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_UPDATE_LOAN_REPAYMENT, async (payload: UpdateLoanRepaymentPayload) =>
+  updateLoanRepayment(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_DELETE_LOAN_REPAYMENT, async (payload: DeleteLoanRepaymentPayload) =>
+  deleteLoanRepayment(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID, async (payload: { loanId: string } & PaginationRequest) => {
+  if (!payload?.loanId) {
+    throw new Error('Missing loan id payload');
+  }
+  return fetchLoanRepaymentsByLoanId(db, payload.loanId, payload);
+});
 
 app.whenReady().then(() => {
   initDatabase();

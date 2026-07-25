@@ -4,28 +4,35 @@
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-slate-500">Amount Loaned</p>
-                <p class="text-base text-slate-900">GHC {{ details().amountLoaned }}</p>
+                <p class="text-base text-slate-900">{{ details().amountLoaned | currencyFormatter }}</p>
             </div>
         </div>
 
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-slate-500">Total Paid</p>
-                <p class="text-base text-slate-900">GHC {{ details().amountPaid }}</p>
+                <p class="text-base text-slate-900">{{ details().amountPaid | currencyFormatter }}</p>
             </div>
         </div>
 
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-slate-500">Total Left</p>
-                <p class="text-base text-slate-900">GHC {{ details().amountLoaned - details().amountPaid }}</p>
+                <p class="text-base text-slate-900">{{ details().amountLoaned - details().amountPaid | currencyFormatter}}</p>
             </div>
         </div>
 
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-slate-500">Interest Rate</p>
-                <p class="text-base text-slate-900">{{ details().rate }}%</p>
+                <p class="text-base text-slate-900">{{ details().rate }}% ({{ (details().amountLoaned * (details().rate / 100)) | currencyFormatter }})</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div>
+                <p class="tracking-wide text-slate-500">Due Created</p>
+                <p class="text-base text-slate-900">{{ details().dateCreated | dateFormatter }}</p>
             </div>
         </div>
 

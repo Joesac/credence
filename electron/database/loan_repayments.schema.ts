@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
   receiver_id TEXT NOT NULL,
   amount REAL NOT NULL,
   notes TEXT,
+  is_cancelled INTEGER NOT NULL DEFAULT 0,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),
   is_synced INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (loan_id) REFERENCES loans(id) ON UPDATE CASCADE ON DELETE CASCADE,

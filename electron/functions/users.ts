@@ -12,6 +12,7 @@ import {
   SanitizedUser,
   UpdateUserPayload,
 } from '../types';
+import { createIpcError } from '../errors';
 
 function sanitizeUser(row: DbUserRow): SanitizedUser {
   const { password: _password, ...rest } = row;
@@ -73,17 +74,37 @@ export function createUser(db: Database.Database, payload: CreateUserPayload) {
 }
 
 export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
+  // Fetch existing user to verify password and check current state
+  const stmt = db.prepare(`SELECT * FROM users WHERE id = @id LIMIT 1`);
+  const record = stmt.get({ id: payload.id }) as DbUserRow | undefined;
+
+  if (!record) {
+    throw createIpcError('USER_NOT_FOUND', 'The user account could not be located.');
+  }
+
+  // Mandatory verification of existing password for any profile updates
+  if (!payload.currentPassword || !verifyPassword(payload.currentPassword, record.password)) {
+    throw createIpcError('INVALID_CURRENT_PASSWORD', 'The current password you entered is incorrect.');
+  }
+
   const fields: string[] = [];
   const params: Record<string, unknown> = { id: payload.id };
+
+  if (payload.username !== undefined) {
+    // Check if the new username is already taken by another user
+    const checkStmt = db.prepare('SELECT id FROM users WHERE username = @username AND id != @id LIMIT 1');
+    const existing = checkStmt.get({ username: payload.username, id: payload.id });
+    if (existing) {
+      throw createIpcError('USERNAME_TAKEN', 'This username is already taken. Please choose another one.');
+    }
+
+    fields.push('username = @username');
+    params.username = payload.username;
+  }
 
   if (payload.fullname !== undefined) {
     fields.push('fullname = @fullname');
     params.fullname = payload.fullname;
-  }
-
-  if (payload.username !== undefined) {
-    fields.push('username = @username');
-    params.username = payload.username;
   }
 
   if (payload.password !== undefined) {
@@ -130,7 +151,7 @@ export function loginUser(db: Database.Database, payload: LoginUserPayload) {
   );
   const record = stmt.get({ username: payload.username }) as DbUserRow | undefined;
   if (!record || !verifyPassword(payload.password, record.password)) {
-    throw new Error('Invalid credentials');
+    throw createIpcError('INVALID_CREDENTIALS', 'Invalid username or password.');
   }
   const update = db.prepare(`
     UPDATE users SET date_updated = datetime('now') WHERE id = @id

@@ -27,6 +27,10 @@ import {
   IPC_CHANNEL_UPDATE_MEMBER,
   IPC_CHANNEL_UPDATE_USER,
   IPC_CHANNEL_UPDATE_WITHDRAWAL,
+  IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID,
+  IPC_CHANNEL_ADD_LOAN_REPAYMENT,
+  IPC_CHANNEL_UPDATE_LOAN_REPAYMENT,
+  IPC_CHANNEL_DELETE_LOAN_REPAYMENT,
 } from './constants';
 
 contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
@@ -79,4 +83,12 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
     ipcRenderer.invoke(IPC_CHANNEL_UPDATE_LOAN, payload),
   deleteLoan: (payload: { id: string }) =>
     ipcRenderer.invoke(IPC_CHANNEL_DELETE_LOAN, payload),
+  getLoanRepaymentsByLoanId: (payload: { loanId: string; page: number; pageSize: number }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID, payload),
+  addLoanRepayment: (payload: { loanId: string; receiverId: string; amount: number; notes?: string | null }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_ADD_LOAN_REPAYMENT, payload),
+  updateLoanRepayment: (payload: { id: string; amount?: number; notes?: string | null; isCancelled?: boolean }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_UPDATE_LOAN_REPAYMENT, payload),
+  deleteLoanRepayment: (payload: { id: string }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_DELETE_LOAN_REPAYMENT, payload),
 });

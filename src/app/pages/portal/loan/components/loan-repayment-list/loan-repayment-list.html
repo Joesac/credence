@@ -1,0 +1,16 @@
+<app-data-table
+    [data]="repayments()"
+    [columns]="columns"
+    [loading]="isLoading()"
+    emptyMessage="No repayments found."
+    [(currentPage)]="currentPage"
+    [(pageSize)]="pageSize"
+    [totalRecords]="totalRecords()">
+    <ng-template appDataTableCell="action" let-repayment>
+      @if (repayment.is_cancelled !== 1) {
+        <app-actions-button
+          [actions]="cancelOptions"
+          (onActionSelected)="handleActionSelection($event, repayment)" />
+      }
+    </ng-template>
+</app-data-table>

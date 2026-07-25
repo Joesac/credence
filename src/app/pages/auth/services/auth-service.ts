@@ -34,6 +34,13 @@ export class AuthService extends IpcBridgeService {
   }
 
   /**
+   * Updates an existing user's profile details.
+   */
+  async updateUser(payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string }): Promise<AuthUser> {
+    return this.executeIPC(api => api.updateUser(payload));
+  }
+
+  /**
    * Authenticates a user and stores a local auth session for route guards.
    * Throws when credentials are invalid or Electron API is unavailable.
    */

@@ -8,6 +8,9 @@ import { Member } from '@interfaces/member.interface';
   imports: [Dropdown],
   templateUrl: './member-selection-dropdown.html',
   styleUrl: './member-selection-dropdown.scss',
+  host: {
+    'class': 'w-full'
+  }
 })
 export class MemberSelectionDropdown {
   readonly onSelectMember = output<Member | null>();

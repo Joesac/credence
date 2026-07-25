@@ -129,3 +129,7 @@ export const IPC_CHANNEL_GET_MEMBER_LOANS = 'get-member-loans';
 export const IPC_CHANNEL_ADD_LOAN = 'add-loan';
 export const IPC_CHANNEL_UPDATE_LOAN = 'update-loan';
 export const IPC_CHANNEL_DELETE_LOAN = 'delete-loan';
+export const IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID = 'get-loan-repayments-by-loan-id';
+export const IPC_CHANNEL_ADD_LOAN_REPAYMENT = 'add-loan-repayment';
+export const IPC_CHANNEL_UPDATE_LOAN_REPAYMENT = 'update-loan-repayment';
+export const IPC_CHANNEL_DELETE_LOAN_REPAYMENT = 'delete-loan-repayment';

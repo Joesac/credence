@@ -53,4 +53,41 @@ export interface MemberLoanQueryOptions {
   includeCancelled?: boolean;
 }
 
+export interface LoanRepaymentPayload {
+  loanId: string;
+  receiverId: string;
+  amount: number;
+  notes?: string | null;
+}
+
+export interface LoanRepaymentRelation {
+  id: string;
+  fullname: string;
+  username?: string | null;
+}
+
+export interface LoanRepaymentLoanDetails {
+  id: string;
+  amount: number;
+  member_id: string;
+  member_name: string | null;
+  issuer_id: string;
+  issuer_name: string | null;
+}
+
+export interface LoanRepayment {
+  id: string;
+  loan_id: string;
+  receiver_id: string;
+  amount: number;
+  notes: string | null;
+  is_cancelled: number;
+  date_created: string;
+  is_synced: number;
+  receiver?: LoanRepaymentRelation | null;
+  loan?: LoanRepaymentLoanDetails | null;
+}
+
 export type PaginatedLoans = PaginatedResponse<Loan>;
+
+export type PaginatedLoanRepayments = PaginatedResponse<LoanRepayment>;

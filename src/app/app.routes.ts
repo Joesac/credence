@@ -87,6 +87,17 @@ export const routes: Routes = [
         }
       ]
     },
-    { path: 'settings', component: Settings, data: { breadcrumb: ['Settings'] } }
+    { 
+      path: 'settings', 
+      component: Settings, 
+      data: { breadcrumb: ['Settings'] },
+      children: [
+        {
+          path: 'user-details',
+          loadComponent: () => import('./pages/portal/settings/user/details-component/details-component').then(m => m.DetailsComponent),
+          data: { breadcrumb: ['User Details'] }
+        }
+      ] 
+    }
   ] },
 ];
