@@ -1,5 +1,6 @@
 import { Service } from '@angular/core';
-import { AUTH_SESSION_KEY, AUTH_USER_KEY, AUTH_USERNAME_KEY } from '@constants/auth.const';
+import { AUTH_FULLNAME_KEY, AUTH_SESSION_KEY, AUTH_USER_KEY, AUTH_USERNAME_KEY } from '@constants/auth.const';
+import { User, AuthUser } from '@interfaces/user.interface';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 
@@ -14,17 +15,22 @@ interface RegisterPayload {
   password: string;
 }
 
-interface AuthUser {
-  id: string;
-  fullname: string;
-  username: string;
-  date_created: string;
-  date_updated: string;
-  is_synced: number;
-}
-
 @Service()
 export class AuthService extends IpcBridgeService {
+  /**
+   * Fetches all users from the database.
+   */
+  async getUsers(): Promise<User[]> {
+    return this.executeIPC(api => api.getUsers());
+  }
+
+  /**
+   * Toggles the disabled status of a user.
+   */
+  async toggleUserStatus(userId: string): Promise<User> {
+    return this.executeIPC(api => api.toggleUserStatus({ userId }));
+  }
+
   /**
    * Registers a new user account through the Electron bridge.
    * Returns the created user object when persistence succeeds.
@@ -46,9 +52,20 @@ export class AuthService extends IpcBridgeService {
    */
   async login(payload: LoginPayload): Promise<AuthUser> {
     const user = await this.executeIPC(api => api.loginUser(payload));
-    console.log(user);
-    this.setSession(user.id, user.username);
+    this.setSession(user.id, user.username, user.fullname);
     return user;
+  }
+
+  /**
+   * Verifies the provided password matches the active user's stored password
+   * without creating a new session or modifying state.
+   */
+  async verifyPassword(password: string): Promise<void> {
+    const userId = this.getUserId();
+    if (!userId) {
+      throw new Error('NOT_AUTHENTICATED');
+    }
+    await this.executeIPC(api => api.verifyPassword({ userId, password }));
   }
 
   /**
@@ -85,6 +102,9 @@ export class AuthService extends IpcBridgeService {
       this.clearSession();
       throw new Error('SESSION_EXPIRED');
     }
+
+    // Update stored fullname in case it was missing or changed
+    localStorage.setItem(AUTH_FULLNAME_KEY, user.fullname);
 
     return user as AuthUser;
   }
@@ -139,13 +159,20 @@ export class AuthService extends IpcBridgeService {
   }
 
   /**
+   * Returns the active authenticated full name from local storage.
+   */
+  getFullname(): string | null {
+    return localStorage.getItem(AUTH_FULLNAME_KEY);
+  }
+
+  /**
    * Persists auth keys consumed by route guards and session checks.
    */
-  private setSession(userId: string, username: string): void {
-    console.log("SESSION AREA: ", userId);
+  private setSession(userId: string, username: string, fullname: string): void {
     const sessionToken = `session-${userId}-${Date.now()}`;
     localStorage.setItem(AUTH_USER_KEY, userId);
     localStorage.setItem(AUTH_USERNAME_KEY, username);
+    localStorage.setItem(AUTH_FULLNAME_KEY, fullname);
     localStorage.setItem(AUTH_SESSION_KEY, sessionToken);
   }
 
@@ -155,6 +182,7 @@ export class AuthService extends IpcBridgeService {
   private clearSession(): void {
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_USERNAME_KEY);
+    localStorage.removeItem(AUTH_FULLNAME_KEY);
     localStorage.removeItem(AUTH_SESSION_KEY);
   }
 }

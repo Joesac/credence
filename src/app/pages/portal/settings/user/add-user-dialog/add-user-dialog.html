@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Add New User</h2>
+<mat-dialog-content>
+  <form class="space-y-4 pt-2" (submit)="onSubmit($event)">
+    <app-inputfield
+      [formField]="addUserForm.fullname"
+      label="Fullname"
+      placeholder="Enter full name"
+    />
+
+    <app-inputfield
+      [formField]="addUserForm.username"
+      label="Username"
+      placeholder="Enter username"
+    />
+
+    <app-inputfield
+      [formField]="addUserForm.password"
+      label="Password"
+      type="password"
+      placeholder="Enter password"
+    />
+
+    <app-inputfield
+      [formField]="addUserForm.confirmPassword"
+      label="Confirm Password"
+      type="password"
+      placeholder="Confirm password"
+    />
+    @if (showPasswordMismatch()) {
+      <span class="text-rose-600 text-sm -mt-3 mb-2">Passwords do not match.</span>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="isSubmitting()">Cancel</button>
+  <button 
+    class="btn-primary" 
+    (click)="onSubmit($event)" 
+    [disabled]="addUserForm().invalid() || isSubmitting()"
+  >
+    @if (isSubmitting()) {
+      <span>Creating...</span>
+    } @else {
+      <span>Add User</span>
+    }
+  </button>
+</mat-dialog-actions>

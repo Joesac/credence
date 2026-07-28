@@ -19,6 +19,7 @@ type HistoryTransaction = {
   memberId: string;
   type: 'Deposit' | 'Withdrawal';
   amount: number;
+  refreshmentToken?: number;
   occurredAt: string;
   isCancelled: boolean;
   action?: string;
@@ -108,6 +109,20 @@ export class History {
     { key: 'action', header: '' }
   ];
 
+  protected readonly depositColumns: ColumnDef<HistoryTransaction>[] = [
+    this.transactionColumns[0],
+    this.transactionColumns[1],
+    this.transactionColumns[2],
+    this.transactionColumns[3],
+    this.transactionColumns[4],
+    {
+      key: 'refreshmentToken',
+      header: 'Refreshment Token',
+      formatter: (row) => row.refreshmentToken ?? '',
+    },
+    this.transactionColumns[5],
+  ];
+
   protected readonly transactionActions: ActionButtonOption[] = [
     { id: 'cancel', label: 'Cancel' }
   ];
@@ -123,6 +138,7 @@ export class History {
       transactionId: deposit.transaction_id ?? deposit.id,
       memberId: deposit.member_id,
       amount: deposit.amount,
+      refreshmentToken: deposit.refreshment_token,
       occurredAt: deposit.date_updated ?? deposit.date_created,
       type: 'Deposit',
       isCancelled: Boolean(deposit.is_cancelled),

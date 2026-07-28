@@ -1,0 +1,35 @@
+:host {
+  ::ng-deep {
+    /* Remove outer border and background of mat-calendar */
+    .mat-calendar {
+      background: transparent;
+      width: 100%;
+    }
+
+    .mat-calendar-content {
+      padding: 0;
+    }
+
+    /* Active/Selected Day */
+    .mat-calendar-body-selected {
+      background-color: var(--color-brand-primary) !important;
+      color: var(--color-text-on-primary) !important;
+    }
+
+    /* Today's highlighting */
+    .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+      border-color: var(--color-brand-primary) !important;
+      color: var(--color-brand-primary);
+    }
+
+    /* Remove unnecessary visual noise */
+    .mat-calendar-main {
+      border: none;
+    }
+
+    .mat-calendar-table {
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+  }
+}

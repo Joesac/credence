@@ -97,7 +97,6 @@ export class Register {
       this.toastService.success({ message: 'Member registered successfully.' });
       this.registerForm().reset({ ...this.INITIAL_DATA });
     } catch (error) {
-      console.error('Member registration failed', error);
       this.toastService.error({ message: 'Unable to register member. Please try again.' });
     } finally {
       this.isSubmitting.set(false);

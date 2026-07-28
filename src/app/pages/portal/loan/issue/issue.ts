@@ -36,6 +36,7 @@ interface LoanIssueData {
   providers: [provideNativeDateAdapter()],
   templateUrl: './issue.html',
   styleUrl: './issue.scss',
+  host: { 'class': 'w-full flex justify-center' }
 })
 export class Issue {
   private readonly toastService = inject(ToastService);

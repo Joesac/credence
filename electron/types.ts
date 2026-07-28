@@ -21,6 +21,11 @@ export interface LoginUserPayload {
   password: string;
 }
 
+export interface VerifyPasswordPayload {
+  userId: string;
+  password: string;
+}
+
 export interface LogoutUserPayload {
   userId: string;
 }
@@ -31,6 +36,7 @@ export interface UpdateUserPayload {
   fullname?: string;
   username?: string;
   password?: string;
+  isDisabled?: number | boolean;
 }
 
 export interface CreateMemberPayload {
@@ -46,6 +52,7 @@ export interface UpdateMemberPayload {
   telephoneNumber?: string;
   location?: string;
   creatorId?: string;
+  isDisabled?: number | boolean;
 }
 
 export interface DeleteMemberPayload {
@@ -59,6 +66,7 @@ export interface CreateDepositPayload {
   receivedBy: string;
   paymentMethod: DepositPaymentMethod;
   amount: number;
+  refreshmentToken: number;
   notes?: string | null;
 }
 
@@ -68,6 +76,7 @@ export interface UpdateDepositPayload {
   receivedBy?: string;
   paymentMethod?: DepositPaymentMethod;
   amount?: number;
+  refreshmentToken?: number;
   notes?: string | null;
 }
 
@@ -78,6 +87,7 @@ export interface DeleteDepositPayload {
 export interface DepositQueryOptions extends PaginationRequest {
   includeCancelled?: boolean;
   memberId?: string;
+  date?: string;
 }
 
 export interface CreateWithdrawalPayload {
@@ -102,6 +112,21 @@ export interface DeleteWithdrawalPayload {
 export interface WithdrawalQueryOptions extends PaginationRequest {
   includeCancelled?: boolean;
   memberId?: string;
+  date?: string;
+}
+
+export interface DailySummaryPayload {
+  date: string;
+}
+
+export interface DailySummary {
+  totalDepositsAmount: number;
+  depositCount: number;
+  totalWithdrawalsAmount: number;
+  withdrawalCount: number;
+  netCollection: number;
+  refreshmentTokenAmount: number;
+  refreshmentTokenCount: number;
 }
 
 export interface MemberFinancialSummaryPayload {
@@ -186,6 +211,8 @@ export type DbUserRow = {
   fullname: string;
   username: string;
   password: string;
+  is_disabled: number;
+  last_login: string | null;
   date_created: string;
   date_updated: string;
   is_synced: number;
@@ -203,6 +230,7 @@ export type DbMemberRow = {
   date_created: string;
   date_updated: string;
   is_deleted: number;
+  is_disabled: number;
   is_synced: number;
 };
 
@@ -215,14 +243,16 @@ export type DbDepositRow = {
   received_by: string;
   payment_method: DepositPaymentMethod;
   amount: number;
+  refreshment_token: number;
   notes: string | null;
   is_cancelled: number;
   date_updated: string;
   date_created: string;
   is_synced: number;
+  member_name: string | null;
 };
 
-export type SanitizedDeposit = DbDepositRow;
+export type SanitizedDeposit = Omit<DbDepositRow, 'member_name'> & { member_name: string };
 
 export type DbWithdrawalRow = {
   id: string;
@@ -235,9 +265,10 @@ export type DbWithdrawalRow = {
   date_created: string;
   date_updated: string;
   is_synced: number;
+  member_name: string | null;
 };
 
-export type SanitizedWithdrawal = DbWithdrawalRow;
+export type SanitizedWithdrawal = Omit<DbWithdrawalRow, 'member_name'> & { member_name: string };
 
 export type DbLoanRepaymentRow = {
   id: string;
@@ -294,4 +325,37 @@ export interface SerializedError {
   code: string;
   message: string;
   details?: unknown;
+}
+
+export interface DashboardStats {
+  totalMembers: number;
+  nonDisabledMembers: number;
+  disabledMembers: number;
+  totalDeposits: number;
+  totalWithdrawals: number;
+  activeLoansCount: number;
+  totalActiveLoanPrincipal: number;
+  todayCollection: number;
+  todayRefreshmentTokens: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: 'deposit' | 'withdrawal' | 'loan' | 'repayment';
+  member_name: string;
+  amount: number;
+  date: string;
+  status: string;
+}
+
+export interface DashboardChartDataPoint {
+  date: string;
+  deposits: number;
+  withdrawals: number;
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  recentActivities: RecentActivity[];
+  chartData: DashboardChartDataPoint[];
 }

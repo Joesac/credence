@@ -7,6 +7,7 @@ export interface DepositPayload {
   receivedBy: string;
   paymentMethod: DepositPaymentMethod;
   amount: number;
+  refreshmentToken: number;
   notes?: string | null;
 }
 
@@ -18,9 +19,11 @@ export interface Deposit {
   id: string;
   transaction_id: string | null;
   member_id: string;
+  member_name: string;
   received_by: string;
   payment_method: DepositPaymentMethod;
   amount: number;
+  refreshment_token: number;
   notes: string | null;
   is_cancelled: number;
   date_created: string;

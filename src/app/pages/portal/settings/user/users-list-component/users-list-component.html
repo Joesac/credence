@@ -1,0 +1,40 @@
+<section class="mt-6 px-4 w-full max-width">
+    <div class="flex justify-end mb-8">
+      <button class="btn-primary flex items-center gap-2" (click)="addUser()">
+          <span>Add User</span>
+          <span class="material-symbols-outlined text-lg">add</span>
+      </button>
+    </div>
+
+    <div class="px-4 w-full flex flex-col gap-4">
+        <div class="flex-1">
+            <app-inputfield
+                [(value)]="searchQuery"
+                placeholder="Search for users..."
+            />
+        </div>
+
+        <app-data-table
+          [data]="filteredUsers()"
+          [columns]="tableConfig"
+          [loading]="isLoading()"
+          [(currentPage)]="currentPage"
+          [(pageSize)]="pageSize"
+        >
+          <ng-template appDataTableCell="is_disabled" let-user>
+            @if (user.is_disabled) {
+                <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center inline-block">Disabled</div>
+            } @else {
+                <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center inline-block">Active</div>
+            }
+          </ng-template>
+
+          <ng-template appDataTableCell="action" let-user>
+            <app-actions-button
+              [actions]="getActionOptions(user)"
+              (onActionSelected)="handleActionSelection($event, user)"
+            />
+          </ng-template>
+        </app-data-table>
+    </div>
+</section>

@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
+import squirrelStartup from 'electron-squirrel-startup';
 import * as path from 'path';
+import * as fs from 'fs';
 import Database from 'better-sqlite3';
 import {
   CREATE_USERS_TABLE,
@@ -35,12 +37,17 @@ import {
   IPC_CHANNEL_GET_WITHDRAWALS,
   IPC_CHANNEL_LOGIN_USER,
   IPC_CHANNEL_LOGOUT_USER,
+  IPC_CHANNEL_VERIFY_PASSWORD,
   IPC_CHANNEL_UPDATE_DEPOSIT,
   IPC_CHANNEL_UPDATE_LOAN,
   IPC_CHANNEL_UPDATE_MEMBER,
   IPC_CHANNEL_UPDATE_USER,
   IPC_CHANNEL_UPDATE_WITHDRAWAL,
+  IPC_CHANNEL_GET_DASHBOARD_DATA,
+  IPC_CHANNEL_GET_DAILY_SUMMARY,
+  IPC_CHANNEL_TOGGLE_USER_STATUS,
   PRODUCTION_DATABASE_FILENAME,
+  DEFAULT_ADMIN_USER_ID,
 } from './constants';
 import {
   fetchUsers,
@@ -50,6 +57,8 @@ import {
   logoutUser,
   seedDefaultAdminUser,
   updateUser,
+  verifyUserPassword,
+  toggleUserStatus,
 } from './functions/users';
 import {
   fetchMembers,
@@ -67,6 +76,7 @@ import {
   createWithdrawal,
   deleteWithdrawal,
   fetchWithdrawals,
+  fetchDailySummary,
   updateWithdrawal,
 } from './functions/transactions';
 import {
@@ -84,6 +94,7 @@ import {
   LoanQueryOptions,
   LoginUserPayload,
   LogoutUserPayload,
+  VerifyPasswordPayload,
   MemberFinancialSummaryPayload,
   UpdateMemberPayload,
   UpdateUserPayload,
@@ -95,6 +106,8 @@ import {
   UpdateLoanRepaymentPayload,
   DeleteLoanRepaymentPayload,
   PaginationRequest,
+  DashboardData,
+  DailySummaryPayload,
 } from './types';
 import {
   createLoan,
@@ -107,8 +120,15 @@ import {
   updateLoanRepayment,
   deleteLoanRepayment,
 } from './functions/loans';
+import { fetchDashboardData } from './functions/dashboard';
+import { autoSeedIfEmpty } from './functions/seed';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
+
+// Handles creating/removing shortcuts on Windows when installing/uninstalling
+if (squirrelStartup) {
+  app.quit();
+}
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database;
@@ -143,12 +163,16 @@ function initDatabase(): void {
   runMigrations(db);
 
   seedDefaultAdminUser(db);
+
+  // Auto-seed from Excel if the database is empty
+  autoSeedIfEmpty(db);
 }
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
+    icon: path.join(__dirname, '../electron/assets/icons/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -158,12 +182,24 @@ function createWindow(): void {
   });
 
   // If running in dev, load the Angular live dev server. Otherwise, load the dist build.
+  // const isDev = !app.isPackaged;
+  // if (isDev) {
+  //   mainWindow.loadURL('http://localhost:4200');
+  //   mainWindow.webContents.openDevTools();
+  // } else {
+  //   mainWindow.loadFile(path.join(__dirname, '../dist/credence/browser/index.html'));
+  // }
+
+  // If running in dev, load the Angular live dev server. Otherwise, load the dist build.
   const isDev = !app.isPackaged;
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:4200');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/your-angular-app/browser/index.html'));
+    // app.getAppPath() reliably targets the root inside app.asar in production
+    const indexPath = path.join(app.getAppPath(), 'dist/credence/browser/index.html');
+    mainWindow.loadFile(indexPath);
   }
 
   mainWindow.on('closed', () => {
@@ -198,6 +234,10 @@ registerIpcHandler(IPC_CHANNEL_LOGOUT_USER, async (payload: LogoutUserPayload) =
 
 registerIpcHandler(IPC_CHANNEL_UPDATE_USER, async (payload: UpdateUserPayload) =>
   updateUser(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_VERIFY_PASSWORD, async (payload: VerifyPasswordPayload) =>
+  verifyUserPassword(db, payload)
 );
 
 registerIpcHandler(IPC_CHANNEL_GET_MEMBERS, async (payload: FetchMembersPayload) =>
@@ -307,6 +347,25 @@ registerIpcHandler(IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID, async (payload: {
     throw new Error('Missing loan id payload');
   }
   return fetchLoanRepaymentsByLoanId(db, payload.loanId, payload);
+});
+
+registerIpcHandler(IPC_CHANNEL_TOGGLE_USER_STATUS, async (payload: { userId: string } | string) => {
+  const userId = typeof payload === 'string' ? payload : payload?.userId;
+  if (!userId) {
+    throw new Error('Missing userId payload');
+  }
+  return toggleUserStatus(db, userId);
+});
+
+registerIpcHandler(IPC_CHANNEL_GET_DASHBOARD_DATA, async () =>
+  fetchDashboardData(db)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_DAILY_SUMMARY, async (payload: DailySummaryPayload) => {
+  if (!payload?.date) {
+    throw new Error('Missing date payload');
+  }
+  return fetchDailySummary(db, payload.date);
 });
 
 app.whenReady().then(() => {

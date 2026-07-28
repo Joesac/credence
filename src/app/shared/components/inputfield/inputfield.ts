@@ -25,6 +25,7 @@ export class Inputfield implements FormValueControl<string | number | null> {
   readonly hint = input<string>('');
   readonly label = input<string | null>(null);
   readonly placeholder = input<string>('');
+  readonly disabled = input<boolean>(false);
   readonly type = input<'text' | 'textarea' | 'password'>('text');
   readonly inputMode = input<'text' | 'numeric' | 'decimal'>('text');
 

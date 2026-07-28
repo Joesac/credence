@@ -2,18 +2,18 @@
  
 @if (label()) {
     <label 
-        class="font-medium text-slate-700"
+        class="font-medium text-text-main"
     >
-        <span [class.!text-red-600]="isError">{{ label() }}</span> 
-        <span class="text-red-600">{{ (errors() | json)?.length > 0 ? ' *' : '' }}</span>
+        <span [class.!text-rose-600]="isError">{{ label() }}</span> 
+        <span class="text-rose-600">{{ (errors() | json)?.length > 0 ? ' *' : '' }}</span>
     </label>
 }
     
 <div cdkOverlayOrigin #origin="cdkOverlayOrigin" class="w-full">
     <input 
-        class="w-full h-10 py-1 px-4 border rounded-xl outline-none focus:outline-none border-slate-300"
-        [class.border-red-600]="isError"
-        [class.border-slate-300]="!isError"
+        class="w-full h-10 py-1 px-4 border rounded-xl outline-none focus:outline-none border-border-base bg-surface text-text-main placeholder:text-text-muted/50"
+        [class.border-rose-600]="isError"
+        [class.border-border-base]="!isError"
         [type]="type()"
         [placeholder]="placeholder()"
         [value]="_label()"
@@ -27,7 +27,7 @@
 @if (touched()) {
     <div class="flex flex-col gap-2">
         @for (error of errors(); track error) {
-            <span class="text-red-600 text-sm tex">{{ error?.message }}</span>
+            <span class="text-rose-600 text-sm tex">{{ error?.message }}</span>
         }
     </div>
 }
@@ -42,16 +42,16 @@
     (detach)="closeDropdown()"
 >
     <div
-        class="max-h-56 overflow-y-auto border border-slate-300 shadow-sm bg-white rounded-xl p-1 flex flex-col"
+        class="max-h-56 overflow-y-auto border border-border-base shadow-ui-md bg-surface rounded-xl p-1 flex flex-col"
         tabindex="-1"
         [style.width.px]="panelWidth()"
     >
         @if (!collection()?.length) {
-            <span class="text-muted w-full text-center py-2">No data found!</span>
+            <span class="text-text-muted w-full text-center py-2">No data found!</span>
         } @else {
-            @for (item of collection() ?? []; track item.label) {
+            @for (item of collection() ?? []; track item.value) {
                 <button
-                    class="text-slate-800 text-left cursor-pointer hover:bg-slate-100 rounded-xl py-1 px-2 focus:outline-none"
+                    class="text-text-main text-left cursor-pointer hover:bg-surface-hover rounded-xl py-2 px-4 focus:outline-none transition-colors"
                     (click)="onSelect(item)"
                 >
                     {{ item.label }}

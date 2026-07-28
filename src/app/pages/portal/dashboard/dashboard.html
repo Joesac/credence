@@ -1,2 +1,197 @@
-<p>dashboard works!!!!</p>
-I love seeing this working...
+<div class="space-y-4 pb-8 px-4">
+  <!-- Header -->
+  <header>
+    @if (showWelcome()) {
+      <p class="text-text-muted my-8 text-2xl">Welcome back <span class="capitalize font-bold text-text-main">{{ userFirstName() }}</span>! Here's what's happening today.</p>
+    }
+  </header>
+
+  @if (isLoading()) {
+    <div class="flex flex-col items-center justify-center py-20 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+      <p class="text-text-muted font-medium">Assembling your insights...</p>
+    </div>
+  } @else {
+    @if (dashboardData(); as data) {
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Members -->
+        <div class="card p-6 border-l-4 border-l-brand-primary">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-text-muted">Total Members</p>
+              <h3 class="text-2xl font-semibold text-text-main mt-1">{{ data.stats.totalMembers }}</h3>
+              <p class="text-xs text-text-muted mt-1">
+                Active: {{ data.stats.nonDisabledMembers }} &bull; Disabled: {{ data.stats.disabledMembers }}
+              </p>
+            </div>
+            <div class="p-3 bg-surface-hover rounded-xl text-text-main">
+              <span class="material-symbols-outlined text-2xl">groups</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Funds -->
+        <div class="card p-6 border-l-4 border-l-emerald-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-text-muted">Available Funds</p>
+              <h3
+                class="text-2xl font-semibold text-text-main mt-1 cursor-pointer select-none"
+                role="button"
+                tabindex="0"
+                [attr.aria-pressed]="showAvailableFunds()"
+                [attr.aria-label]="showAvailableFunds() ? 'Available funds visible' : 'Available funds hidden, click to reveal'"
+                (click)="toggleAvailableFunds()"
+              >
+                @if (showAvailableFunds()) {
+                  {{ (data.stats.totalDeposits - data.stats.totalWithdrawals) | currencyFormatter }}
+                } @else {
+                  <span aria-hidden="true">••••••</span>
+                }
+              </h3>
+              <p class="text-xs text-text-muted mt-1">
+                Click to {{ !showAvailableFunds() ? "show" :  "hide" }} funds
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-600">
+                <span class="material-symbols-outlined text-2xl">account_balance</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Loans Out -->
+        <div class="card p-6 border-l-4 border-l-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-text-muted">Total Loans Out</p>
+              <h3 class="text-2xl font-semibold text-text-main mt-1">
+                {{ data.stats.totalActiveLoanPrincipal | currencyFormatter }}
+              </h3>
+            </div>
+            <div class="p-3 bg-blue-500/10 rounded-xl text-blue-600">
+              <span class="material-symbols-outlined text-2xl">request_quote</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Active Loans -->
+        <div class="card p-6 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-text-muted">Active Loans</p>
+              <h3 class="text-2xl font-semibold text-text-main mt-1">{{ data.stats.activeLoansCount }}</h3>
+            </div>
+            <div class="p-3 bg-amber-500/10 rounded-xl text-amber-600">
+              <span class="material-symbols-outlined text-2xl">contract</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Section: Chart & Calendar side-by-side -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Chart Section -->
+        <div class="card p-6 col-span-2">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h3 class="text-lg font-semibold text-text-main">Financial Overview</h3>
+              <p class="text-sm text-text-muted">Deposits vs Withdrawals (Last 30 days)</p>
+            </div>
+          </div>
+          <div id="chart" class="min-h-[350px]">
+            <apx-chart
+              [series]="chartOptions.series"
+              [chart]="chartOptions.chart"
+              [xaxis]="chartOptions.xaxis"
+              [yaxis]="chartOptions.yaxis"
+              [dataLabels]="chartOptions.dataLabels"
+              [grid]="chartOptions.grid"
+              [stroke]="chartOptions.stroke"
+              [colors]="chartOptions.colors"
+              [fill]="chartOptions.fill"
+              [tooltip]="chartOptions.tooltip"
+            ></apx-chart>
+          </div>
+        </div>
+
+        <!-- Sidebar: Daily Pulse & Calendar -->
+        <div class="flex flex-col gap-4">
+          <!-- Daily Pulse Widget -->
+          <div class="card p-6 bg-surface-hover/30 border border-border-base/50">
+            <h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Today's Pulse</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-brand-primary/10 rounded-lg text-brand-primary">
+                    <span class="material-symbols-outlined text-xl">payments</span>
+                  </div>
+                  <div>
+                    <p class="text-xs text-text-muted">Collected Today</p>
+                    <p class="text-lg font-bold text-text-main">{{ data.stats.todayCollection | currencyFormatter }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-600">
+                    <span class="material-symbols-outlined text-xl">token</span>
+                  </div>
+                  <div>
+                    <p class="text-xs text-text-muted">Refreshment Tokens</p>
+                    <p class="text-lg font-bold text-text-main">{{ data.stats.todayRefreshmentTokens | currencyFormatter }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar Section -->
+          <div class="card p-6 flex-1">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-semibold text-text-main">Event Calendar</h3>
+              <p class="text-sm text-text-muted">{{ selectedDate().toISOString() | dateFormatter }}</p>
+            </div>
+            <mat-calendar [selected]="selectedDate()"></mat-calendar>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section: Recent Activity spanning full width -->
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold text-text-main mb-6">Recent Activity</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (activity of data.recentActivities; track activity.id) {
+            <div class="flex items-start gap-4 p-4 rounded-2xl hover:bg-surface-hover transition-colors border border-transparent hover:border-border-base">
+              <div class="p-2 rounded-lg shrink-0" [ngClass]="getActivityColor(activity.type)">
+                <span class="material-symbols-outlined text-xl leading-none">
+                  {{ getActivityIcon(activity.type) }}
+                </span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <p class="text-sm font-semibold text-text-main truncate">
+                    {{ activity.member_name }}
+                  </p>
+                  <p class="text-sm font-semibold text-text-main shrink-0">
+                    {{ activity.amount | currencyFormatter }}
+                  </p>
+                </div>
+                <p class="text-xs text-text-muted mt-0.5">
+                  {{ activity.type | titlecase }} &bull; {{ activity.date | dateFormatter }} &bull; {{ activity.date | timeFormatter }}
+                </p>
+              </div>
+            </div>
+          } @empty {
+            <div class="col-span-full flex flex-col items-center justify-center py-12 text-text-muted">
+              <span class="material-symbols-outlined text-4xl mb-2">history</span>
+              <p class="text-sm">No recent activity found.</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

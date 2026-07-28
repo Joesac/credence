@@ -33,7 +33,7 @@ export class MemberSelectionDropdown {
     effect(() => {
       const query = this.debouncedQuery.value().trim();
       void this.loadMembers(query);
-    }, { allowSignalWrites: true });
+    });
 
     void this.loadMembers('');
   }

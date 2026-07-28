@@ -96,6 +96,11 @@ export const routes: Routes = [
           path: 'user-details',
           loadComponent: () => import('./pages/portal/settings/user/details-component/details-component').then(m => m.DetailsComponent),
           data: { breadcrumb: ['User Details'] }
+        },
+        {
+          path: 'users-list',
+          loadComponent: () => import('./pages/portal/settings/user/users-list-component/users-list-component').then(m => m.UsersListComponent),
+          data: { breadcrumb: ['Users'] }
         }
       ] 
     }

@@ -31,6 +31,8 @@ export const USER_BASE_COLUMNS = `
   id,
   fullname,
   username,
+  is_disabled,
+  last_login,
   date_created,
   date_updated,
   is_synced
@@ -48,6 +50,7 @@ export const MEMBER_BASE_COLUMNS = `
   date_created,
   date_updated,
   is_deleted,
+  is_disabled,
   is_synced
 `;
 
@@ -58,6 +61,7 @@ export const DEPOSIT_BASE_COLUMNS = `
   received_by,
   payment_method,
   amount,
+  refreshment_token,
   notes,
   is_cancelled,
   date_created,
@@ -95,6 +99,7 @@ export const LOAN_BASE_COLUMNS = `
 /**
  * Default user seed constants for first-run system initialization.
  */
+export const DEFAULT_ADMIN_USER_ID = '1bcbaa15-5c95-47d6-83b8-198bc806b2ba';
 export const DEFAULT_ADMIN_USER: UserSeedPayload = {
   fullname: 'Super Admin',
   username: 'admin',
@@ -110,6 +115,7 @@ export const IPC_CHANNEL_GET_USER_BY_ID = 'get-user-by-id';
 export const IPC_CHANNEL_LOGIN_USER = 'login-user';
 export const IPC_CHANNEL_LOGOUT_USER = 'logout-user';
 export const IPC_CHANNEL_UPDATE_USER = 'update-user';
+export const IPC_CHANNEL_VERIFY_PASSWORD = 'verify-password';
 export const IPC_CHANNEL_GET_MEMBERS = 'get-members';
 export const IPC_CHANNEL_GET_MEMBER_BY_ID = 'get-member-by-id';
 export const IPC_CHANNEL_ADD_MEMBER = 'add-member';
@@ -133,3 +139,6 @@ export const IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID = 'get-loan-repayments-b
 export const IPC_CHANNEL_ADD_LOAN_REPAYMENT = 'add-loan-repayment';
 export const IPC_CHANNEL_UPDATE_LOAN_REPAYMENT = 'update-loan-repayment';
 export const IPC_CHANNEL_DELETE_LOAN_REPAYMENT = 'delete-loan-repayment';
+export const IPC_CHANNEL_GET_DASHBOARD_DATA = 'get-dashboard-data';
+export const IPC_CHANNEL_GET_DAILY_SUMMARY = 'get-daily-summary';
+export const IPC_CHANNEL_TOGGLE_USER_STATUS = 'toggle-user-status';

@@ -15,7 +15,7 @@ html {
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
-      // 🚀 Use your Tailwind font variable directly here
+      // Use your Tailwind font variable directly here
       typography: (
         plain-family: var(--font-sans),
         brand-family: var(--font-sans),
@@ -23,46 +23,70 @@ html {
       density: 0,
     ),
     $overrides: (
-      // 🚀 Force body and primary component text to 14px baseline
+      primary: var(--color-brand-primary),
+    
+      // Force body and primary component text to 14px baseline
       body-large-size: 14px,
       body-large-line-height: 20px,
       
       body-medium-size: 14px,
       body-medium-line-height: 20px,
 
-      // 🚀 Force labels (like buttons, chips, and menus) to 14px baseline
+      // Force labels (like buttons, chips, and menus) to 14px baseline
       label-large-size: 14px,
       label-large-line-height: 20px,
       
       label-medium-size: 14px,
       label-medium-line-height: 20px,
+
+      // Global Color Overrides to match our semantic variables
+      on-surface: var(--color-text-main),
+      on-surface-variant: var(--color-text-muted),
+      outline: var(--color-border-base),
     )
   );
 
   @include mat.form-field-overrides((
-    outlined-container-shape: .5rem,
-    outlined-outline-color: var(--color-slate-300),
-    outlined-hover-outline-color: var(--color-slate-400),
+    outlined-container-shape: var(--radius-xl),
+    outlined-outline-color: var(--color-border-base),
+    outlined-hover-outline-color: var(--color-text-muted),
+    outlined-focus-outline-color: var(--color-brand-primary),
     outlined-focus-outline-width: 1px,
-    container-height: 40px,
+    outlined-label-text-color: var(--color-text-muted),
+    outlined-focus-label-text-color: var(--color-brand-primary),
+    outlined-input-text-color: var(--color-text-main),
+    container-height: 46px,
     container-vertical-padding: 0,
-    container-text-line-height: 40px,
+    container-text-line-height: 46px,
   ));
 
   @include mat.datepicker-overrides((
-    calendar-container-background-color: var(--color-card),
-    calendar-container-elevation-shadow: "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
+    calendar-container-background-color: var(--color-surface),
+    calendar-container-shape: var(--radius-2xl),
+    calendar-container-elevation-shadow: var(--shadow-ui-elevated),
+    calendar-header-divider-color: var(--color-border-base),
+    calendar-date-selected-state-background-color: var(--color-brand-primary),
+    calendar-date-selected-state-text-color: var(--color-text-on-primary),
+    calendar-date-today-outline-color: var(--color-brand-primary),
+    calendar-date-today-selected-state-outline-color: var(--color-text-on-primary),
   ));
 
   @include mat.snack-bar-overrides((
-    container-shape: var(--rounded-normal),
+    container-shape: var(--radius-xl),
+    container-color: var(--color-surface),
+    supporting-text-color: var(--color-text-main),
   ));
 
   @include mat.menu-overrides((
-    container-shape: var(--rounded-normal),
-    divider-color: red,
-    container-color: var(--color-menu-bg),
-    item-hover-state-layer-color: var(--color-hover)
+    container-shape: var(--radius-xl),
+    divider-color: var(--color-border-base),
+    container-color: var(--color-surface),
+    item-hover-state-layer-color: var(--color-surface-hover),
+    item-label-text-color: var(--color-text-main),
+  ));
+
+  @include mat.dialog-overrides((
+    container-color: var(--color-surface),
   ));
 }
 

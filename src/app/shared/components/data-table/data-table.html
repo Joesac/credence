@@ -1,10 +1,10 @@
-<div class="w-full bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+<div class="w-full bg-surface border border-border-base rounded-2xl shadow-ui-sm overflow-hidden">
   <div class="w-full overflow-x-auto">
     <table class="w-full text-left border-collapse">
       <thead>
-        <tr class="border-b border-slate-200 bg-slate-50/50">
+        <tr class="border-b border-border-base bg-surface-hover/50">
           @for (col of columns(); track col.key) {
-            <th class="py-4 px-6 text-sm font-semibold text-slate-700 select-none">
+            <th class="py-4 px-6 text-sm font-semibold text-text-main select-none">
               {{ col.header }}
             </th>
           }
@@ -13,34 +13,34 @@
       <tbody>
         @if (loading()) {
           <tr>
-            <td [attr.colspan]="columns().length" class="py-12 text-center text-sm text-slate-500">
+            <td [attr.colspan]="columns().length" class="py-12 text-center text-sm text-text-muted">
               {{ loadingMessage() }}
             </td>
           </tr>
         } @else {
           @if (paginatedData().length === 0) {
             <tr>
-              <td [attr.colspan]="columns().length" class="py-12 text-center text-sm text-slate-400">
+              <td [attr.colspan]="columns().length" class="py-12 text-center text-sm text-text-muted/60">
                 {{ emptyMessage() }}
               </td>
             </tr>
           } @else {
             @for (row of paginatedData(); track $index) {
-              <tr class="border-b border-slate-200 hover:bg-slate-50/20 transition-colors">
+              <tr class="border-b border-border-base hover:bg-surface-hover transition-colors">
                 @for (col of columns(); track col.key) {
                   @let cellValue = getCellValue(row, col);
                   @let template = getCellTemplate(col.key);
-                  <td class="py-4 px-6 align-middle text-sm text-slate-600 font-normal">
+                  <td class="py-4 px-6 align-middle text-sm text-text-muted font-normal">
                     @if (template) {
                       <ng-container
                         *ngTemplateOutlet="template.template; context: { $implicit: row }" />
                     } @else if (cellValue === null || cellValue === undefined || cellValue === '') {
-                      <span class="text-slate-400">—</span>
+                      <span class="text-text-muted/40">—</span>
                     } @else if (isStackedValue(cellValue)) {
                       <div class="flex flex-col justify-center">
-                        <span class="text-sm font-semibold text-slate-900">{{ cellValue.primary }}</span>
+                        <span class="text-sm font-semibold text-text-main">{{ cellValue.primary }}</span>
                         @if (cellValue.secondary) {
-                          <span class="text-xs text-slate-500 mt-1">{{ cellValue.secondary }}</span>
+                          <span class="text-xs text-text-muted mt-1">{{ cellValue.secondary }}</span>
                         }
                       </div>
                     } @else {
@@ -56,7 +56,7 @@
     </table>
   </div>
 
-  <div class="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
+  <div class="p-4 bg-surface border-t border-border-base flex flex-col sm:flex-row gap-4 items-center justify-between">
     <!-- <div class="text-xs text-slate-500 font-medium">
       Showing {{ totalCount() === 0 ? 0 : (currentPage() - 1) * pageSize() + 1 }} to 
       {{ Math.min(currentPage() * pageSize(), totalCount()) }} of 
@@ -67,35 +67,31 @@
         <button 
             (click)="changePage(currentPage() - 1)"
             [disabled]="currentPage() === 1"
-            class="p-1.5 rounded-lg border border-slate-200 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            class="flex items-center justify-center p-1.5 rounded-lg border border-border-base disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed bg-surface hover:bg-surface-hover"
         >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+            <span class="material-symbols-outlined text-lg leading-none text-text-main">chevron_left</span>
         </button>
 
-        <span class="text-xs text-slate-600 font-semibold px-2">
+        <span class="text-xs text-text-main font-semibold px-2">
             Page {{ currentPage() }} of {{ totalPages() }}
         </span>
 
         <button 
             (click)="changePage(currentPage() + 1)"
             [disabled]="currentPage() === totalPages()"
-            class="p-1.5 rounded-lg border border-slate-200 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            class="flex items-center justify-center p-1.5 rounded-lg border border-border-base disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed bg-surface hover:bg-surface-hover"
         >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+            <span class="material-symbols-outlined text-lg leading-none text-text-main">chevron_right</span>
         </button>
     </div>
 
     <div class="flex items-center space-x-6 ml-auto">
-      <div class="flex items-center space-x-2 text-xs text-slate-600 font-medium">
+      <div class="flex items-center space-x-2 text-xs text-text-muted font-medium">
         <span>Rows per page:</span>
         <select 
           [value]="pageSize()" 
           (change)="onPageSizeChange($event)"
-          class="border border-slate-200 bg-white rounded-lg px-2 py-1 outline-none"
+          class="border border-border-base bg-surface rounded-lg px-2 py-1 outline-none text-text-main focus:border-brand-primary transition-colors"
         >
           @for (option of pageSizeOptions; track option) {
             <option [value]="option">{{ option }}</option>

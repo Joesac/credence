@@ -1,4 +1,7 @@
-<div class="flex w-full justify-between py-4 border-b border-divider px-4">
+<div 
+  class="topbar-container flex w-full justify-between py-4 px-4"
+  [class.topbar-scrolled]="isScrolled()"
+>
     <app-breadcrump />
     <div>
         <app-action-center />

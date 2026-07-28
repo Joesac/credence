@@ -28,6 +28,13 @@
                     />
 
                     <app-inputfield
+                        [formField]="depositForm.refreshmentToken"
+                        label="Refreshment Token"
+                        inputMode="numeric"
+                        placeholder="Enter refreshment token"
+                    />
+
+                    <app-inputfield
                         [formField]="depositForm.notes"
                         label="Notes (optional)"
                         placeholder="Enter deposit notes"

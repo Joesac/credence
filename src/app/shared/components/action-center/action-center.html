@@ -1,4 +1,20 @@
-<div class="flex items-center gap-2">
-  <span class="text-sm font-medium text-ink">{{ username }}</span>
-  <button matButton type="button" (click)="onLogout()">Logout</button>
+<div class="flex items-center gap-4">
+  <button 
+    mat-icon-button 
+    type="button" 
+    (click)="toggleTheme()" 
+    class="flex items-center justify-center text-text-muted hover:bg-surface-hover rounded-full w-10 h-10 transition-colors"
+    [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+  >
+    <span class="material-symbols-outlined">
+      {{ isDarkMode() ? 'light_mode' : 'dark_mode' }}
+    </span>
+  </button>
+
+  <div class="flex items-center gap-2">
+    <span class="text-sm font-medium text-text-main capitalize">{{ username }}</span>
+    <button mat-button type="button" (click)="onLogout()" class="!rounded-xl hover:bg-surface-hover text-text-muted">
+      Logout
+    </button>
+  </div>
 </div>

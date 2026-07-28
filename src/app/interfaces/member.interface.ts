@@ -8,6 +8,7 @@ export interface Member {
   date_created: string;
   date_updated: string;
   is_deleted: number;
+  is_disabled: number;
   is_synced: number;
 }
 
@@ -16,6 +17,7 @@ export interface MemberPayload {
   telephoneNumber: string;
   location: string;
   creatorId: string;
+  isDisabled?: number | boolean;
 }
 
 export interface MemberFinancialSummary {

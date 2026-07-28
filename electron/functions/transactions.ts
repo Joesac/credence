@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { DEPOSIT_BASE_COLUMNS } from '../constants';
 import {
   CreateDepositPayload,
+  DailySummary,
   DbDepositRow,
   DeleteDepositPayload,
   DepositQueryOptions,
@@ -20,6 +21,13 @@ import {
 } from '../types';
 import { WITHDRAWAL_BASE_COLUMNS } from '../constants';
 import { createIpcError } from '../errors';
+
+function prefixColumns(columns: string, alias: string): string {
+  return columns.trim().split(',').map(c => `${alias}.${c.trim()}`).join(', ');
+}
+
+const DEPOSIT_COLUMNS = prefixColumns(DEPOSIT_BASE_COLUMNS, 'd');
+const WITHDRAWAL_COLUMNS = prefixColumns(WITHDRAWAL_BASE_COLUMNS, 'w');
 
 type TransactionTable = 'deposits' | 'withdrawals';
 type TransactionPrefix = 'DEP' | 'WDR';
@@ -56,7 +64,7 @@ function generateTransactionId(
  * Normalizes deposit rows to the sanitized variant consumed by IPC responders.
  */
 function sanitizeDeposit(row: DbDepositRow): SanitizedDeposit {
-  return row;
+  return { ...row, member_name: row.member_name ?? 'Unknown' };
 }
 
 /**
@@ -66,8 +74,8 @@ export function createDeposit(db: Database.Database, payload: CreateDepositPaylo
   const id = randomUUID();
   const transactionId = generateTransactionId(db, 'deposits', 'DEP');
   const stmt = db.prepare(`
-    INSERT INTO deposits (id, transaction_id, member_id, received_by, payment_method, amount, notes)
-    VALUES (@id, @transaction_id, @member_id, @received_by, @payment_method, @amount, @notes)
+    INSERT INTO deposits (id, transaction_id, member_id, received_by, payment_method, amount, refreshment_token, notes)
+    VALUES (@id, @transaction_id, @member_id, @received_by, @payment_method, @amount, @refreshment_token, @notes)
   `);
 
   stmt.run({
@@ -77,6 +85,7 @@ export function createDeposit(db: Database.Database, payload: CreateDepositPaylo
     received_by: payload.receivedBy,
     payment_method: payload.paymentMethod,
     amount: payload.amount,
+    refreshment_token: payload.refreshmentToken,
     notes: payload.notes ?? null,
   });
 
@@ -98,28 +107,34 @@ export function fetchDeposits(
   const params: Record<string, unknown> = {};
 
   if (!includeCancelled) {
-    filters.push('is_cancelled = 0');
+    filters.push('d.is_cancelled = 0');
   }
 
   if (options.memberId) {
-    filters.push('member_id = @member_id');
+    filters.push('d.member_id = @member_id');
     params.member_id = options.memberId;
+  }
+
+  if (options.date) {
+    filters.push('date(d.date_created) = @date');
+    params.date = options.date;
   }
 
   const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
   const countStmt = db.prepare(`
     SELECT COUNT(*) as total
-    FROM deposits
+    FROM deposits d
     ${whereClause}
   `);
   const totalRecords = (countStmt.get(params) as { total: number }).total;
 
   const listStmt = db.prepare(`
-    SELECT ${DEPOSIT_BASE_COLUMNS}
-    FROM deposits
+    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name
+    FROM deposits d
+    LEFT JOIN members m ON d.member_id = m.id
     ${whereClause}
-    ORDER BY datetime(date_created) DESC
+    ORDER BY datetime(d.date_created) DESC
     LIMIT @limit OFFSET @offset
   `);
 
@@ -144,9 +159,10 @@ export function fetchDeposits(
  */
 export function fetchDepositById(db: Database.Database, id: string) {
   const stmt = db.prepare(`
-    SELECT ${DEPOSIT_BASE_COLUMNS}
-    FROM deposits
-    WHERE id = @id
+    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name
+    FROM deposits d
+    LEFT JOIN members m ON d.member_id = m.id
+    WHERE d.id = @id
     LIMIT 1
   `);
   const record = stmt.get({ id }) as DbDepositRow | undefined;
@@ -175,6 +191,10 @@ export function updateDeposit(db: Database.Database, payload: UpdateDepositPaylo
   if (payload.amount !== undefined) {
     fields.push('amount = @amount');
     params.amount = payload.amount;
+  }
+  if (payload.refreshmentToken !== undefined) {
+    fields.push('refreshment_token = @refreshment_token');
+    params.refreshment_token = payload.refreshmentToken;
   }
   if (payload.notes !== undefined) {
     fields.push('notes = @notes');
@@ -249,7 +269,7 @@ export function fetchMemberFinancialSummary(
  * Normalizes raw withdrawal rows into the sanitized shape consumed by IPC responders.
  */
 function sanitizeWithdrawal(row: DbWithdrawalRow): SanitizedWithdrawal {
-  return row;
+  return { ...row, member_name: row.member_name ?? 'Unknown' };
 }
 
 /**
@@ -319,28 +339,34 @@ export function fetchWithdrawals(
   const params: Record<string, unknown> = {};
 
   if (!includeCancelled) {
-    filters.push('is_cancelled = 0');
+    filters.push('w.is_cancelled = 0');
   }
 
   if (options.memberId) {
-    filters.push('member_id = @member_id');
+    filters.push('w.member_id = @member_id');
     params.member_id = options.memberId;
+  }
+
+  if (options.date) {
+    filters.push('date(w.date_created) = @date');
+    params.date = options.date;
   }
 
   const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
   const countStmt = db.prepare(`
     SELECT COUNT(*) AS total
-    FROM withdrawals
+    FROM withdrawals w
     ${whereClause}
   `);
   const totalRecords = (countStmt.get(params) as { total: number }).total;
 
   const listStmt = db.prepare(`
-    SELECT ${WITHDRAWAL_BASE_COLUMNS}
-    FROM withdrawals
+    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name
+    FROM withdrawals w
+    LEFT JOIN members m ON w.member_id = m.id
     ${whereClause}
-    ORDER BY datetime(date_created) DESC
+    ORDER BY datetime(w.date_created) DESC
     LIMIT @limit OFFSET @offset
   `);
   const rows = (listStmt.all({ ...params, limit: pageSize, offset }) as DbWithdrawalRow[]).map(
@@ -366,9 +392,10 @@ export function fetchWithdrawals(
 export function fetchWithdrawalById(db: Database.Database, id: string) {
   // Fetch single withdrawal to reuse within CRUD helpers.
   const stmt = db.prepare(`
-    SELECT ${WITHDRAWAL_BASE_COLUMNS}
-    FROM withdrawals
-    WHERE id = @id
+    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name
+    FROM withdrawals w
+    LEFT JOIN members m ON w.member_id = m.id
+    WHERE w.id = @id
     LIMIT 1
   `);
   const record = stmt.get({ id }) as DbWithdrawalRow | undefined;
@@ -431,5 +458,35 @@ export function deleteWithdrawal(db: Database.Database, payload: DeleteWithdrawa
   `);
   const result = stmt.run({ id: payload.id });
   return { success: result.changes > 0 } as const;
+}
+
+export function fetchDailySummary(db: Database.Database, date: string): DailySummary {
+  const depositStats = db.prepare(`
+    SELECT
+      IFNULL(SUM(amount), 0) as total_amount,
+      COUNT(*) as count,
+      IFNULL(SUM(refreshment_token), 0) as refreshment_total,
+      SUM(CASE WHEN refreshment_token > 0 THEN 1 ELSE 0 END) as refreshment_count
+    FROM deposits
+    WHERE date(date_created) = @date AND is_cancelled = 0
+  `).get({ date }) as { total_amount: number; count: number; refreshment_total: number; refreshment_count: number };
+
+  const withdrawalStats = db.prepare(`
+    SELECT
+      IFNULL(SUM(amount), 0) as total_amount,
+      COUNT(*) as count
+    FROM withdrawals
+    WHERE date(date_created) = @date AND is_cancelled = 0
+  `).get({ date }) as { total_amount: number; count: number };
+
+  return {
+    totalDepositsAmount: depositStats.total_amount,
+    depositCount: depositStats.count,
+    totalWithdrawalsAmount: withdrawalStats.total_amount,
+    withdrawalCount: withdrawalStats.count,
+    netCollection: depositStats.total_amount - withdrawalStats.total_amount,
+    refreshmentTokenAmount: depositStats.refreshment_total,
+    refreshmentTokenCount: depositStats.refreshment_count ?? 0,
+  };
 }
 

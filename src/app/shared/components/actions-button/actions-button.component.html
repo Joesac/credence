@@ -1,10 +1,18 @@
-<button matIconButton [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
-    <mat-icon>more_vert</mat-icon>
+<button matIconButton [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu" class="flex items-center justify-center">
+    <span class="material-symbols-outlined">more_vert</span>
 </button>
 <mat-menu #menu="matMenu">
     @for (action of actions(); track $index;) {
-        <button mat-menu-item (click)="_onActionSelected($event, action)">
-            {{ action.label }}
+        <button mat-menu-item
+            [disabled]="action.disabled" 
+            (click)="_onActionSelected($event, action)"
+        >
+            <div class="flex items-center">
+                @if (action.icon) {
+                    <span class="material-symbols-outlined mr-2">{{ action.icon }}</span>
+                }
+                <span>{{ action.label }}</span>
+            </div>
         </button>
     }
 </mat-menu>

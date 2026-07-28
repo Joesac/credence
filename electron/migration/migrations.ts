@@ -79,10 +79,56 @@ const addLoanRepaymentCancellationColumn: Migration = {
   },
 };
 
+const addDepositRefreshmentTokenColumn: Migration = {
+  id: '20240725_add_deposit_refreshment_token_column',
+  description: 'Add refreshment_token column to deposits table',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'deposits', 'refreshment_token', 'refreshment_token INTEGER NOT NULL DEFAULT 0');
+  },
+};
+
+const addMemberIsDisabledColumn: Migration = {
+  id: '20240726_add_member_is_disabled_column',
+  description: 'Add is_disabled column to members table',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'members', 'is_disabled', 'is_disabled INTEGER NOT NULL DEFAULT 0');
+  },
+};
+
+const addUsersUsernameColumn: Migration = {
+  id: '20240726_add_users_username_column',
+  description: 'Add username column to users table for legacy databases',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'users', 'username', "username TEXT NOT NULL DEFAULT ''");
+  },
+};
+
+const addUsersStatusAndLoginColumns: Migration = {
+  id: '20240726_add_users_status_and_login_columns',
+  description: 'Add is_disabled and last_login columns to users table',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'users', 'is_disabled', 'is_disabled INTEGER NOT NULL DEFAULT 0');
+    addColumnIfMissing(db, 'users', 'last_login', 'last_login TEXT');
+  },
+};
+
+const makeUsersUsernameUnique: Migration = {
+  id: '20240727_make_users_username_unique',
+  description: 'Add unique index to username column in users table',
+  run: (db: Database.Database) => {
+    createUniqueIndexIfMissing(db, 'users', 'uniq_users_username', '(username)');
+  },
+};
+
 export const MIGRATIONS: Migration[] = [
   migrateWithdrawalsColumns,
   addTransactionIdColumns,
   addLoanCancellationColumn,
   updateLoanRepaymentsSchema,
   addLoanRepaymentCancellationColumn,
+  addDepositRefreshmentTokenColumn,
+  addMemberIsDisabledColumn,
+  addUsersUsernameColumn,
+  addUsersStatusAndLoginColumns,
+  makeUsersUsernameUnique,
 ];

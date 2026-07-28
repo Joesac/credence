@@ -5,6 +5,8 @@ import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/a
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { LoanRepayment, PaginatedLoanRepayments } from '@interfaces/loan.interface';
 import { LoanService } from '../../service/loan-service';
+import { CurrencyFormatterPipe } from '@shared/pipes/currency-formatter-pipe';
+import { DateFormatterPipe } from '@shared/pipes/date-formatter-pipe';
 
 @Component({
   selector: 'app-loan-repayment-list',
@@ -13,12 +15,15 @@ import { LoanService } from '../../service/loan-service';
     DataTableCellDirective,
     ActionsButtonComponent,
   ],
+  providers: [CurrencyFormatterPipe, DateFormatterPipe],
   templateUrl: './loan-repayment-list.html',
   styleUrl: './loan-repayment-list.scss',
 })
 export class LoanRepaymentList {
   private readonly loanService = inject(LoanService);
   private readonly toastService = inject(ToastService);
+  private readonly currencyPipe = inject(CurrencyFormatterPipe);
+  private readonly datePipe = inject(DateFormatterPipe);
   private requestId = 0;
 
   /** The loan whose repayments should be listed. */
@@ -32,10 +37,10 @@ export class LoanRepaymentList {
 
   protected readonly columns: ColumnDef<LoanRepayment>[] = [
     { key: 'receiver', header: 'Issuer name', formatter: (row) => row.receiver?.fullname ?? '—' },
-    { key: 'amount', header: 'Amount' },
+    { key: 'amount', header: 'Amount', formatter: (row) => this.currencyPipe.transform(row.amount) },
     { key: 'is_cancelled', header: 'Cancelled', formatter: (row) => (row.is_cancelled ? 'Yes' : 'No') },
     { key: 'notes', header: 'Notes' },
-    { key: 'date_created', header: 'Date created' },
+    { key: 'date_created', header: 'Date created', formatter: (row) => this.datePipe.transform(row.date_created) },
     { key: 'action', header: '' },
   ];
 

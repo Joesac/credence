@@ -13,6 +13,7 @@ import { DepositPaymentMethod } from '@interfaces/deposit.interface';
 interface DepositData {
   paymentMethod: string;
   amount: number | null;
+  refreshmentToken: number | null;
   notes: string;
 }
 
@@ -41,6 +42,7 @@ export class Deposit {
   private INITIAL_DATA = <DepositData>({
     paymentMethod: '',
     amount: null,
+    refreshmentToken: null,
     notes: '',
   })
   protected readonly depositModel = signal<DepositData>(this.INITIAL_DATA);
@@ -53,6 +55,9 @@ export class Deposit {
       message: 'Amount is required'
     });
     min(path.amount, 1, { message: 'Minimum amount is 1' });
+    required(path.refreshmentToken, {
+      message: 'Refreshment token is required'
+    });
   });
 
   protected onSelectMember(member: Member | null) {
@@ -86,12 +91,13 @@ export class Deposit {
       return;
     }
 
-    const { paymentMethod, amount, notes } = this.depositForm().value();
+    const { paymentMethod, amount, refreshmentToken, notes } = this.depositForm().value();
     const payload = {
       memberId: member.id,
       receivedBy,
       paymentMethod: paymentMethod as DepositPaymentMethod,
       amount: Number(amount),
+      refreshmentToken: Number(refreshmentToken),
       notes: notes?.trim() ? notes.trim() : null,
     };
 

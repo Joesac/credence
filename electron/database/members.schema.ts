@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS members (
   date_updated TEXT NOT NULL DEFAULT (datetime('now')),
   -- Soft-delete flag keeps records queryable for audit trails without permanently removing them.
   is_deleted INTEGER NOT NULL DEFAULT 0,
+  -- Disable flag marks a member as inactive while preserving record history.
+  is_disabled INTEGER NOT NULL DEFAULT 0,
   is_synced INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (creator_id) REFERENCES users(id)
 );

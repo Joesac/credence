@@ -17,11 +17,11 @@ function sanitizeMember(row: DbMemberRow): SanitizedMember {
 
 /**
  * Extracts the trailing numeric sequence from a formatted account number string.
- * Example: "TVC12" -> 12. Returns null when no numeric suffix is present.
+ * Example: "TVC001" -> "001". Returns null when no numeric suffix is present.
  */
-function extractAccountSequence(accountNumber: string): number | null {
+function extractAccountSequence(accountNumber: string): string | null {
   const match = accountNumber.match(/(\d+)$/);
-  return match ? Number(match[1]) : null;
+  return match ? match[1] : null;
 }
 
 /**
@@ -29,7 +29,7 @@ function extractAccountSequence(accountNumber: string): number | null {
  */
 export function getLastMemberAccountNumber(db: Database.Database): string {
   const stmt = db.prepare(`
-    SELECT account_number FROM members WHERE is_deleted = 0 ORDER BY datetime(date_created) DESC LIMIT 1
+    SELECT account_number FROM members WHERE is_deleted = 0 ORDER BY Account_number DESC LIMIT 1
   `);
   const result = stmt.get() as { account_number: string } | undefined;
   return result?.account_number ?? '0';
@@ -99,8 +99,12 @@ export function fetchMemberById(db: Database.Database, id: string) {
 export function createMember(db: Database.Database, payload: CreateMemberPayload) {
   const id = randomUUID();
   const lastAccountNumber = getLastMemberAccountNumber(db);
-  const nextSequence = (extractAccountSequence(lastAccountNumber) ?? 0) + 1;
-  const nextAccountNumber = `TVC${nextSequence}`;
+  const lastSeqStr = extractAccountSequence(lastAccountNumber);
+  
+  const nextVal = (lastSeqStr ? Number(lastSeqStr) : 0) + 1;
+  const padding = lastSeqStr ? lastSeqStr.length : 3; // Default padding to 3 (e.g., 001)
+  const nextAccountNumber = `TVC${nextVal.toString().padStart(padding, '0')}`;
+
   const insert = db.prepare(`
     INSERT INTO members (id, fullname, account_number, telephoneNumber, location, creator_id)
     VALUES (@id, @fullname, @account_number, @telephoneNumber, @location, @creator_id)
@@ -140,6 +144,11 @@ export function updateMember(db: Database.Database, payload: UpdateMemberPayload
   if (payload.creatorId !== undefined) {
     fields.push('creator_id = @creator_id');
     params.creator_id = payload.creatorId;
+  }
+
+  if (payload.isDisabled !== undefined) {
+    fields.push('is_disabled = @is_disabled');
+    params.is_disabled = Number(payload.isDisabled);
   }
 
   if (!fields.length) {

@@ -1,11 +1,11 @@
 import { Menu } from '../interfaces/menu.interface';
 
 export const MENU: Menu[] = [
-  { id: 'portal/dashboard', label: 'Dashboard', icon: 'grid' },
+  { id: 'portal/dashboard', label: 'Dashboard', icon: 'dashboard' },
   {
     id: 'portal/members',
     label: 'Members',
-    icon: 'users',
+    icon: 'group',
     isActive: false,
     children: [
       { id: 'register', label: 'Register', isActive: false },
@@ -15,7 +15,7 @@ export const MENU: Menu[] = [
   {
     id: 'portal/transactions',
     label: 'Transactions',
-    icon: 'arrows',
+    icon: 'sync_alt',
     isActive: false,
     children: [
       { id: 'deposit', label: 'Deposit', isActive: false },
@@ -26,7 +26,7 @@ export const MENU: Menu[] = [
   {
     id: 'portal/loans',
     label: 'Loans',
-    icon: 'briefcase',
+    icon: 'account_balance_wallet',
     isActive: false,
     children: [
       { id: 'issue', label: 'Issue' },
@@ -36,7 +36,7 @@ export const MENU: Menu[] = [
   {
     id: 'portal/reports',
     label: 'Reports',
-    icon: 'chart',
+    icon: 'bar_chart',
     isActive: false,
     children: [
       { id: 'daily', label: 'Daily Collections', isActive: false },
@@ -46,11 +46,11 @@ export const MENU: Menu[] = [
   {
     id: 'portal/settings',
     label: 'Settings',
-    icon: 'cog',
+    icon: 'settings',
     isActive: false,
     children: [
       { id: 'user-details', label: 'User Details', isActive: false },
+      { id: 'users-list', label: 'Users', isActive: false },
     ]
   },
-  // { id: 'portal/settings', label: 'Settings', icon: 'cog', isActive: false }
 ];

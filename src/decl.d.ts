@@ -23,25 +23,30 @@ import {
   LoanRepaymentPayload,
   PaginatedLoanRepayments,
 } from '@interfaces/loan.interface';
+import { DashboardData, DailySummary } from '@interfaces/dashboard.interface';
 
 export interface ElectronAPI {
+  getDashboardData: () => Promise<DashboardData>;
+  getDailySummary: (payload: { date: string }) => Promise<DailySummary>;
   getUsers: () => Promise<User[]>;
   addUser: (payload: { fullname: string; username: string; password: string }) => Promise<User>;
   getUserById: (payload: { id: string }) => Promise<User | null>;
   loginUser: (payload: { username: string; password: string }) => Promise<User>;
   logoutUser: (payload: { userId: string }) => Promise<{ success: boolean }>;
   updateUser: (payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string }) => Promise<User>;
+  verifyPassword: (payload: { userId: string; password: string }) => Promise<{ valid: boolean }>;
+  toggleUserStatus: (payload: { userId: string }) => Promise<User>;
   getMembers: (payload: PaginationRequest) => Promise<PaginatedResponse<Member>>;
   getMemberById: (payload: { id: string }) => Promise<any>;
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => Promise<any>;
-  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; creatorId?: string }) => Promise<any>;
+  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; creatorId?: string; isDisabled?: number | boolean }) => Promise<any>;
   deleteMember: (payload: { id: string }) => Promise<{ success: boolean }>;
   getMemberFinancials: (payload: { memberId: string }) => Promise<MemberFinancialSummary>;
-  getDeposits: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string }) => Promise<PaginatedDeposits>;
+  getDeposits: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string; date?: string }) => Promise<PaginatedDeposits>;
   addDeposit: (payload: DepositPayload) => Promise<Deposit>;
   updateDeposit: (payload: DepositUpdatePayload) => Promise<Deposit | null>;
   deleteDeposit: (payload: { id: string }) => Promise<{ success: boolean }>;
-  getWithdrawals: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string }) => Promise<PaginatedWithdrawals>;
+  getWithdrawals: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string; date?: string }) => Promise<PaginatedWithdrawals>;
   addWithdrawal: (payload: WithdrawalPayload) => Promise<Withdrawal>;
   updateWithdrawal: (payload: WithdrawalUpdatePayload) => Promise<Withdrawal | null>;
   deleteWithdrawal: (payload: { id: string }) => Promise<{ success: boolean }>;

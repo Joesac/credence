@@ -15,7 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 
-export type ActionButtonOption = { id: string; label: string; };
+export type ActionButtonOption = { id: string; label: string; icon?: string; disabled?: boolean; };
 
 @Component({
   selector: 'app-actions-button',

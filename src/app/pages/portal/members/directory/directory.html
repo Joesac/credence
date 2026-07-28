@@ -15,7 +15,7 @@
         >
           <ng-template appDataTableCell="action" let-member>
             <app-actions-button
-              [actions]="actionOptions"
+              [actions]="getActionOptions(member)"
               (onActionSelected)="handleActionSelection($event, member)"
             />
           </ng-template>

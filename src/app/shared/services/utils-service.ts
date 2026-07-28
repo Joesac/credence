@@ -9,11 +9,11 @@ export class UtilsService {
   private readonly locale = inject(LOCALE_ID);
 
   dateFormatter(dateISO: string): string {
-    return this.datePipe.transform(dateISO, 'dd MMM yyyy', 'GMT', 'en-GB') ?? '';
+    return this.datePipe.transform(dateISO, 'dd MMM yyyy', undefined, 'en-GB') ?? '';
   }
 
   timeFormatter(dateISO: string): string {
-    return this.datePipe.transform(dateISO, 'hh:mm a z', 'GMT', 'en-US') ?? '';
+    return this.datePipe.transform(dateISO, 'hh:mm a', undefined, 'en-US') ?? '';
   }
 
   normalizeDueDate(value: string | Date | null | undefined): string | null {

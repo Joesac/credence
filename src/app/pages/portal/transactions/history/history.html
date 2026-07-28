@@ -5,7 +5,7 @@
     />
 
     @if (selectedMember()) {
-        <section class="mt-4 flex flex-col gap-4 w-full">
+        <section class="my-4 flex flex-col gap-4 w-full">
             @if (selectedMember(); as member) {
                 <app-user-details [user]="member" />
             }
@@ -19,7 +19,7 @@
             <mat-tab label="Deposits">
                 <app-data-table 
                     [data]="depositRows()"
-                    [columns]="transactionColumns"
+                    [columns]="depositColumns"
                     [loading]="isLoadingDeposits()"
                     loadingMessage="Loading deposit history..."
                     [emptyMessage]="depositEmptyMessage()"
@@ -29,9 +29,9 @@
                 >
                     <ng-template appDataTableCell="isCancelled" let-row>
                         @if (row.isCancelled) {
-                            <div class="bg-red-100 text-red-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Cancelled</div>
+                            <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
                         } @else {
-                            <div class="bg-green-100 text-green-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Open</div>
+                            <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
                         }
                     </ng-template>
 
@@ -59,9 +59,9 @@
                 >
                     <ng-template appDataTableCell="isCancelled" let-row>
                         @if (row.isCancelled) {
-                            <div class="bg-red-100 text-red-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Cancelled</div>
+                            <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
                         } @else {
-                            <div class="bg-green-100 text-green-700 rounded-full text-xs font-semibold px-1.5 py-1.5 text-center flex-auto">Open</div>
+                            <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
                         }
                     </ng-template>
 
@@ -78,7 +78,7 @@
             </mat-tab>
         </mat-tab-group>
     } @else {
-        <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+        <div class="mt-4 rounded-2xl border border-dashed border-border-base bg-surface-hover p-6 text-sm text-text-muted">
             Select a member to preview their profile and history.
         </div>
     }

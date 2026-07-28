@@ -10,7 +10,7 @@ import { PaginationRequest } from '@interfaces/pagination.interface';
 
 @Service()
 export class WithdrawalService extends IpcBridgeService {
-  getWithdrawals(payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string }): Promise<PaginatedWithdrawals> {
+  getWithdrawals(payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string; date?: string }): Promise<PaginatedWithdrawals> {
     return this.executeIPC(api => api.getWithdrawals(payload));
   }
 

@@ -9,6 +9,7 @@
 local.db
 local.db-shm
 local.db-wal
+/out
 
 # Node
 /node_modules

@@ -20,6 +20,7 @@ interface UserDetailsData {
   ],
   templateUrl: './details-component.html',
   styleUrl: './details-component.scss',
+  host: { 'class': 'w-full flex justify-center' }
 })
 export class DetailsComponent implements OnInit {
   private readonly authService = inject(AuthService);

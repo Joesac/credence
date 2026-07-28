@@ -23,6 +23,8 @@ export class LoanSelectionDropdownComponent {
   protected readonly loans = signal<Loan[]>([]);
   protected readonly isLoading = signal<boolean>(false);
   protected readonly selectedLoanId = signal<string | null>(null);
+  private previousMemberId: string | null = null;
+  private previousQuery = '';
   private readonly currencyFormatter = new Intl.NumberFormat('en-GH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -46,12 +48,27 @@ export class LoanSelectionDropdownComponent {
       const query = this.debouncedQuery.value().trim();
 
       if (!memberId) {
-        this.resetState();
+        if (this.previousMemberId !== null) {
+          this.resetState();
+        }
+        this.previousMemberId = null;
+        this.previousQuery = '';
         return;
       }
 
-      void this.loadLoans(memberId, query);
-    }, { allowSignalWrites: true });
+      if (memberId !== this.previousMemberId) {
+        this.previousMemberId = memberId;
+        this.previousQuery = '';
+        this.resetState();
+        void this.loadLoans(memberId, this.previousQuery);
+        return;
+      }
+
+      if (query !== this.previousQuery) {
+        this.previousQuery = query;
+        void this.loadLoans(memberId, query);
+      }
+    });
   }
 
   protected handleSearchChange(value: string): void {

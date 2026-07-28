@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS deposits (
   received_by TEXT NOT NULL,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'momo')),
   amount REAL NOT NULL,
+  refreshment_token INTEGER NOT NULL,
   notes TEXT,
   is_cancelled INTEGER NOT NULL DEFAULT 0,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),

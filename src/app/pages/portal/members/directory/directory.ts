@@ -6,6 +6,7 @@ import { Member } from '@interfaces/member.interface';
 import { MemberService } from '../service/member-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
+import { UtilsService } from '@shared/services/utils-service';
 
 @Component({
   selector: 'app-directory',
@@ -22,6 +23,7 @@ import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/a
 export class Directory implements OnInit {
   private readonly memberService = inject(MemberService);
   private readonly toastService = inject(ToastService);
+  private readonly utilsService = inject(UtilsService);
   private requestId = 0;
 
   protected readonly members = signal<Member[]>([]);
@@ -38,16 +40,33 @@ export class Directory implements OnInit {
     { key: 'account_number', header: 'Acc Number' },
     { key: 'telephoneNumber', header: 'Tel Number' },
     { key: 'location', header: 'Location' },
-    { key: 'date_created', header: 'Date Created' },
-    { key: 'date_updated', header: 'Date Updated' },
+    { 
+      key: 'date_created', 
+      header: 'Date Created',
+      formatter: (row) => {
+        const member = row as Member;
+        return `${this.utilsService.dateFormatter(member.date_created)} ${this.utilsService.timeFormatter(member.date_created).toUpperCase()}`;
+      }
+    },
+    { 
+      key: 'date_updated', 
+      header: 'Date Updated',
+      formatter: (row) => {
+        const member = row as Member;
+        return `${this.utilsService.dateFormatter(member.date_updated)} ${this.utilsService.timeFormatter(member.date_updated).toUpperCase()}`;
+      }
+    },
     { key: 'action', header: '' },
   ];
 
-  protected readonly actionOptions: ActionButtonOption[] = [
-    { id: 'contribution', label: 'Make Contribution' },
-    { id: 'loan', label: 'Pay Loan' },
-    { id: 'Disable', label: 'Disable' },
-  ];
+  protected getActionOptions(member: Member): ActionButtonOption[] {
+    const options: ActionButtonOption[] = member.is_disabled
+      ? [{ id: 'enable', label: 'Enable', icon: 'check_circle' }]
+      : [{ id: 'disable', label: 'Disable', icon: 'block' }];
+
+    options.push({ id: 'delete', label: 'Delete', icon: 'delete', disabled: !!member.is_deleted });
+    return options;
+  }
 
   constructor() {
     effect(() => {
@@ -116,18 +135,52 @@ export class Directory implements OnInit {
     }
   }
 
-  protected handleActionSelection(option: ActionButtonOption, member: Member): void {
+  protected async handleActionSelection(option: ActionButtonOption, member: Member): Promise<void> {
+    if (option.disabled) {
+      return;
+    }
+
     switch (option.id) {
-      case 'contribution':
-        // TODO: wire to contribution flow
-        this.toastService.success({ message: `Ready to contribute for ${member.fullname}` });
+      case 'enable':
+        await this.setMemberDisabled(member, false);
         break;
-      case 'loan':
-        // TODO: wire to loan payment flow
-        this.toastService.success({ message: `Ready to record loan payment for ${member.fullname}` });
+      case 'disable':
+        await this.setMemberDisabled(member, true);
         break;
-      default:
+      case 'delete':
+        await this.removeMember(member);
         break;
     }
+  }
+
+  private async setMemberDisabled(member: Member, disabled: boolean): Promise<void> {
+    try {
+      await this.memberService.updateMember(member.id, { isDisabled: disabled ? 1 : 0 });
+      this.toastService.success({ message: `${member.fullname} ${disabled ? 'disabled' : 'enabled'}.` });
+      this.refreshMembers();
+    } catch (error) {
+      console.error('Failed to toggle member disabled state', error);
+      this.toastService.error({ message: `Could not ${disabled ? 'disable' : 'enable'} ${member.fullname}.` });
+    }
+  }
+
+  private async removeMember(member: Member): Promise<void> {
+    try {
+      const result = await this.memberService.deleteMember(member.id);
+      if (result.success) {
+        this.toastService.success({ message: `${member.fullname} deleted.` });
+      } else {
+        this.toastService.error({ message: `${member.fullname} could not be deleted.` });
+      }
+      this.refreshMembers();
+    } catch (error) {
+      console.error('Failed to delete member', error);
+      this.toastService.error({ message: `Could not delete ${member.fullname}.` });
+    }
+  }
+
+  private refreshMembers(): void {
+    const search = this.debouncedQuery.value()?.trim() ?? '';
+    void this.loadMembers(this.currentPage(), this.pageSize(), search);
   }
 }

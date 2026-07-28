@@ -15,6 +15,7 @@ export interface Withdrawal {
   id: string;
   transaction_id: string | null;
   member_id: string;
+  member_name: string;
   issuer_id: string;
   amount: number;
   notes: string | null;
