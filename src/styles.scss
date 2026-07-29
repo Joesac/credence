@@ -18,7 +18,7 @@
      Brand & Accent Colors
      ========================================================================== */
   --color-brand-primary: #064E3B;
-  --color-brand-primary-hover: #4E65C1;
+  --color-brand-primary-hover: #0d3b2d;
   --color-brand-secondary: #F49236;
   --color-brand-secondary-hover: #E38125;
 
@@ -68,7 +68,7 @@
    Dark Theme Configuration
    ========================================================================== */
 [data-theme='dark'] {
-  --color-brand-primary: #34D399;
+  --color-brand-primary: #1ca573;
 
   --color-canvas: #09090B;       /* Neutral background */
   --color-surface: #121214;      /* Neutral surface */
@@ -168,4 +168,8 @@
   }
 
   --mat-form-field-container-vertical-padding: 0;
+
+  .mat-mdc-form-field-bottom-align {
+    height: 4px;
+  }
 }

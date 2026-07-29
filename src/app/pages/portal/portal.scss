@@ -1,3 +1,7 @@
 mat-sidenav {
   width: 250px;
+
+  &[position="end"] {
+    width: 500px !important;
+  }
 }

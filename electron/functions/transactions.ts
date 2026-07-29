@@ -64,7 +64,11 @@ function generateTransactionId(
  * Normalizes deposit rows to the sanitized variant consumed by IPC responders.
  */
 function sanitizeDeposit(row: DbDepositRow): SanitizedDeposit {
-  return { ...row, member_name: row.member_name ?? 'Unknown' };
+  return { 
+    ...row, 
+    member_name: row.member_name ?? 'Unknown',
+    received_by_name: row.received_by_name ?? 'Unknown'
+  };
 }
 
 /**
@@ -130,9 +134,10 @@ export function fetchDeposits(
   const totalRecords = (countStmt.get(params) as { total: number }).total;
 
   const listStmt = db.prepare(`
-    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name
+    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name, u.fullname as received_by_name
     FROM deposits d
     LEFT JOIN members m ON d.member_id = m.id
+    LEFT JOIN users u ON d.received_by = u.id
     ${whereClause}
     ORDER BY datetime(d.date_created) DESC
     LIMIT @limit OFFSET @offset
@@ -159,9 +164,10 @@ export function fetchDeposits(
  */
 export function fetchDepositById(db: Database.Database, id: string) {
   const stmt = db.prepare(`
-    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name
+    SELECT ${DEPOSIT_COLUMNS}, m.fullname as member_name, u.fullname as received_by_name
     FROM deposits d
     LEFT JOIN members m ON d.member_id = m.id
+    LEFT JOIN users u ON d.received_by = u.id
     WHERE d.id = @id
     LIMIT 1
   `);
@@ -269,7 +275,11 @@ export function fetchMemberFinancialSummary(
  * Normalizes raw withdrawal rows into the sanitized shape consumed by IPC responders.
  */
 function sanitizeWithdrawal(row: DbWithdrawalRow): SanitizedWithdrawal {
-  return { ...row, member_name: row.member_name ?? 'Unknown' };
+  return { 
+    ...row, 
+    member_name: row.member_name ?? 'Unknown',
+    issuer_name: row.issuer_name ?? 'Unknown'
+  };
 }
 
 /**
@@ -362,9 +372,10 @@ export function fetchWithdrawals(
   const totalRecords = (countStmt.get(params) as { total: number }).total;
 
   const listStmt = db.prepare(`
-    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name
+    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name, u.fullname as issuer_name
     FROM withdrawals w
     LEFT JOIN members m ON w.member_id = m.id
+    LEFT JOIN users u ON w.issuer_id = u.id
     ${whereClause}
     ORDER BY datetime(w.date_created) DESC
     LIMIT @limit OFFSET @offset
@@ -392,9 +403,10 @@ export function fetchWithdrawals(
 export function fetchWithdrawalById(db: Database.Database, id: string) {
   // Fetch single withdrawal to reuse within CRUD helpers.
   const stmt = db.prepare(`
-    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name
+    SELECT ${WITHDRAWAL_COLUMNS}, m.fullname as member_name, u.fullname as issuer_name
     FROM withdrawals w
     LEFT JOIN members m ON w.member_id = m.id
+    LEFT JOIN users u ON w.issuer_id = u.id
     WHERE w.id = @id
     LIMIT 1
   `);

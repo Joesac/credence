@@ -250,9 +250,13 @@ export type DbDepositRow = {
   date_created: string;
   is_synced: number;
   member_name: string | null;
+  received_by_name: string | null;
 };
 
-export type SanitizedDeposit = Omit<DbDepositRow, 'member_name'> & { member_name: string };
+export type SanitizedDeposit = Omit<DbDepositRow, 'member_name' | 'received_by_name'> & { 
+  member_name: string;
+  received_by_name: string;
+};
 
 export type DbWithdrawalRow = {
   id: string;
@@ -266,9 +270,13 @@ export type DbWithdrawalRow = {
   date_updated: string;
   is_synced: number;
   member_name: string | null;
+  issuer_name: string | null;
 };
 
-export type SanitizedWithdrawal = Omit<DbWithdrawalRow, 'member_name'> & { member_name: string };
+export type SanitizedWithdrawal = Omit<DbWithdrawalRow, 'member_name' | 'issuer_name'> & { 
+  member_name: string;
+  issuer_name: string;
+};
 
 export type DbLoanRepaymentRow = {
   id: string;

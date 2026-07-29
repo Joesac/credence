@@ -1,0 +1,11 @@
+<button 
+  mat-icon-button 
+  type="button" 
+  (click)="toggleTheme()" 
+  class="flex items-center justify-center text-text-muted hover:bg-surface-hover rounded-full w-10 h-10 transition-colors"
+  [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+>
+  <span class="material-symbols-outlined">
+    {{ isDarkMode() ? 'light_mode' : 'dark_mode' }}
+  </span>
+</button>

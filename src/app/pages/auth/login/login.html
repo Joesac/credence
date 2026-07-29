@@ -1,28 +1,79 @@
-<section class="flex w-screen h-screen items-center justify-center px-4">
-    <form class="w-full max-w-md" (submit)="onSubmit($event)">
-        <div class="card flex flex-col gap-4">
-            <h2 class="text-3xl">Login</h2>
-
-            <app-inputfield
-                [formField]="loginForm.username"
-                label="Username"
-                placeholder="Enter username"
-            />
-            <app-inputfield
-                [formField]="loginForm.password"
-                label="Password"
-                placeholder="Enter password"
-                type="password"
-            />
-
-            <button
-                matButton
-                type="submit"
-                class="btn-primary w-full"
-                [disabled]="loginForm().invalid()"
-            >
-                Login
-            </button>
+<section class="flex h-screen w-full overflow-hidden bg-canvas">
+    <!-- Visual Branding Side (Left) -->
+    <div class="hidden lg:flex lg:w-1/2 relative bg-brand-primary items-center justify-center p-12 overflow-hidden">
+        <!-- Background Pattern Decor -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+            <img src="assets/ellipses.svg" alt="" class="w-full h-full object-cover scale-150 rotate-12">
         </div>
-    </form>
+        
+        <div class="relative z-10 text-center max-w-md animate-fade-in">
+            <div class="flex flex-col items-center gap-6">
+                <!-- Branding Icon/Logo Placeholder -->
+                <div class="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-2xl border border-white/20">
+                    <span class="material-symbols-outlined text-white text-5xl">account_balance_wallet</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <h1 class="text-5xl font-bold text-white tracking-tight">Credence</h1>
+                    <p class="text-white/70 text-lg font-medium leading-relaxed">
+                        Modern financial management built for transparency and efficiency.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Form Side (Right) -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 lg:p-16 bg-surface relative">
+        <!-- Theme Switcher -->
+        <div class="absolute top-8 right-8">
+            <app-button-theme-switchter />
+        </div>
+
+        <!-- Small logo for mobile/tablet only -->
+        <div class="absolute top-8 left-8 lg:hidden flex items-center gap-2">
+            <div class="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-white text-2xl">account_balance_wallet</span>
+            </div>
+            <span class="text-xl font-bold text-brand-primary tracking-tight">Credence</span>
+        </div>
+
+        <div class="w-full max-w-sm space-y-10 animate-slide-up">
+            <div class="space-y-2">
+                <h2 class="text-3xl font-bold text-text-main tracking-tight">Welcome back</h2>
+                <p class="text-text-muted">Enter your credentials to access your dashboard.</p>
+            </div>
+
+            <form class="space-y-6" (submit)="onSubmit($event)">
+                <div class="space-y-4">
+                    <app-inputfield
+                        [formField]="loginForm.username"
+                        label="Username"
+                        placeholder="Enter your username"
+                    />
+                    <app-inputfield
+                        [formField]="loginForm.password"
+                        label="Password"
+                        placeholder="Enter your password"
+                        type="password"
+                    />
+                </div>
+
+                <div class="pt-2">
+                    <button
+                        type="submit"
+                        class="btn-primary w-full h-12 text-base flex items-center justify-center gap-2"
+                        [disabled]="loginForm().invalid()"
+                    >
+                        <span>Sign in</span>
+                        <span class="material-symbols-outlined text-xl">login</span>
+                    </button>
+                </div>
+
+                <p class="text-center text-xs text-text-muted mt-8">
+                    &copy; {{ now.getFullYear() }} Credence. All rights reserved.
+                </p>
+            </form>
+        </div>
+    </div>
 </section>

@@ -17,6 +17,7 @@ export interface Withdrawal {
   member_id: string;
   member_name: string;
   issuer_id: string;
+  issuer_name: string;
   amount: number;
   notes: string | null;
   is_cancelled: number;

@@ -21,6 +21,7 @@ export interface Deposit {
   member_id: string;
   member_name: string;
   received_by: string;
+  received_by_name: string;
   payment_method: DepositPaymentMethod;
   amount: number;
   refreshment_token: number;

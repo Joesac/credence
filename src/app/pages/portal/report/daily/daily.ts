@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
@@ -15,7 +15,9 @@ import { Deposit } from '@interfaces/deposit.interface';
 import { Withdrawal } from '@interfaces/withdrawal.interface';
 import { DailySummary } from '@interfaces/dashboard.interface';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
+import { RightSidebarService } from '@core/services/right-sidebar-service';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
+import { CdkPortal, PortalModule } from '@angular/cdk/portal';
 
 type DailyTransaction = {
   id: string;
@@ -24,7 +26,15 @@ type DailyTransaction = {
   memberName: string;
   amount: number;
   refreshmentToken?: number;
+  paymentMethod?: string;
+  receivedBy?: string;
+  receivedByName?: string;
+  issuerId?: string;
+  issuerName?: string;
+  notes?: string | null;
   occurredAt: string;
+  dateCreated: string;
+  dateUpdated: string;
   isCancelled: boolean;
   action?: string;
 };
@@ -40,6 +50,7 @@ type DailyTransaction = {
     DataTable,
     DataTableCellDirective,
     ActionsButtonComponent,
+    PortalModule,
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './daily.html',
@@ -52,6 +63,9 @@ export class Daily {
   private readonly withdrawalService = inject(WithdrawalService);
   private readonly toastService = inject(ToastService);
   private readonly ipcBridge = inject(IpcBridgeService);
+  protected readonly rightSidebarService = inject(RightSidebarService);
+
+  @ViewChild('viewDetailsPortal', { static: true }) viewDetailsPortal!: CdkPortal;
 
   protected readonly selectedDate = signal<Date>(new Date());
   protected readonly isLoadingDeposits = signal<boolean>(false);
@@ -61,6 +75,8 @@ export class Daily {
 
   protected readonly cancellingDepositId = signal<string | null>(null);
   protected readonly cancellingWithdrawalId = signal<string | null>(null);
+
+  protected readonly selectedTransaction = signal<DailyTransaction | null>(null);
 
   protected readonly depositPage = signal<number>(1);
   protected readonly depositPageSize = signal<number>(10);
@@ -134,7 +150,13 @@ export class Daily {
       memberName: deposit.member_name,
       amount: deposit.amount,
       refreshmentToken: deposit.refreshment_token,
+      paymentMethod: deposit.payment_method,
+      receivedBy: deposit.received_by,
+      receivedByName: deposit.received_by_name,
+      notes: deposit.notes,
       occurredAt: deposit.date_updated ?? deposit.date_created,
+      dateCreated: deposit.date_created,
+      dateUpdated: deposit.date_updated,
       type: 'Deposit',
       isCancelled: Boolean(deposit.is_cancelled),
     }))
@@ -146,7 +168,12 @@ export class Daily {
       transactionId: withdrawal.transaction_id ?? withdrawal.id,
       memberName: withdrawal.member_name,
       amount: withdrawal.amount,
+      issuerId: withdrawal.issuer_id,
+      issuerName: withdrawal.issuer_name,
+      notes: withdrawal.notes,
       occurredAt: withdrawal.date_updated ?? withdrawal.date_created,
+      dateCreated: withdrawal.date_created,
+      dateUpdated: withdrawal.date_updated,
       type: 'Withdrawal',
       isCancelled: Boolean(withdrawal.is_cancelled),
     }))
@@ -177,7 +204,8 @@ export class Daily {
 
   protected handleTransactionAction(action: ActionButtonOption, row: DailyTransaction): void {
     if (action.id === 'view-details') {
-      // View details implementation pending
+      this.selectedTransaction.set(row);
+      this.rightSidebarService.open(this.viewDetailsPortal);
       return;
     }
 

@@ -77,4 +77,14 @@
     <app-topbar />
     <router-outlet />
   </mat-sidenav-content>
+
+  <mat-sidenav
+    position="end"
+    mode="over"
+    class="max-w-full p-4"
+    [opened]="rightSidebarService.isOpen()"
+    (closed)="rightSidebarService.close()"
+  >
+    <ng-template [cdkPortalOutlet]="rightSidebarService.portal()"></ng-template>
+  </mat-sidenav>
 </mat-sidenav-container>

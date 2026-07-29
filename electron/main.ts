@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -172,6 +172,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
+    autoHideMenuBar: true,
     icon: path.join(__dirname, '../electron/assets/icons/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -369,6 +370,9 @@ registerIpcHandler(IPC_CHANNEL_GET_DAILY_SUMMARY, async (payload: DailySummaryPa
 });
 
 app.whenReady().then(() => {
+  if (app.isPackaged) {
+    Menu.setApplicationMenu(null);
+  }
   initDatabase();
   createWindow();
 });

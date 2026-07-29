@@ -3,6 +3,7 @@ import { form, required, FormField } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { Router } from '@angular/router';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
+import { ButtonThemeSwitchter } from '@core/components/button-theme-switchter/button-theme-switchter';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { PORTAL_DASHBOARD_ROUTE } from '@constants/routes.const';
 import { AuthService } from '../services/auth-service';
@@ -18,6 +19,7 @@ interface LoginData {
     FormField,
     Inputfield,
     MatButtonModule,
+    ButtonThemeSwitchter,
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
@@ -41,6 +43,8 @@ export class Login {
       message: 'Password is required',
     });
   });
+
+  protected readonly now = new Date();
 
   /**
    * Submits validated credentials to the authentication service.

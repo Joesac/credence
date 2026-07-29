@@ -5,15 +5,18 @@ import { Menu } from '@interfaces/menu.interface';
 import { Topbar } from '@shared/components/topbar/topbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
+import { PortalModule } from '@angular/cdk/portal';
+import { RightSidebarService } from '@core/services/right-sidebar-service';
 
 @Component({
   selector: 'app-portal',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatButtonModule, Topbar],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatButtonModule, PortalModule, Topbar],
   templateUrl: './portal.html',
   styleUrl: './portal.scss',
 })
 export class Portal {
   private readonly router = inject(Router);
+  protected readonly rightSidebarService = inject(RightSidebarService);
   protected readonly expandedSections = signal<Record<string, boolean>>({});
   protected readonly menu = MENU;
 

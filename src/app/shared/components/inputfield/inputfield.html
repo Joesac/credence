@@ -24,7 +24,7 @@
             (blur)="touch.emit()"
             ></textarea>
     } @else {
-        <mat-form-field>
+        <mat-form-field [class.is-error]="isError">
             <input 
                 matInput 
                 [type]="type()"
@@ -45,9 +45,9 @@
 </label>
 
 @if (touched()) {
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col ga">
         @for (error of errors(); track error.message) {
-            <span class="text-rose-600 text-sm tex">{{ error?.message }}</span>
+            <span class="text-rose-600 text-sm">{{ error?.message }}</span>
         }
     </div>
 }
