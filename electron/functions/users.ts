@@ -55,8 +55,8 @@ export function fetchUserById(db: Database.Database, id: string) {
 }
 
 export function createUser(db: Database.Database, payload: CreateUserPayload) {
-  // Check if username already exists
-  const checkStmt = db.prepare('SELECT id FROM users WHERE username = @username LIMIT 1');
+  // Check if username already exists (case-insensitive)
+  const checkStmt = db.prepare('SELECT id FROM users WHERE username = @username COLLATE NOCASE LIMIT 1');
   const existing = checkStmt.get({ username: payload.username });
   if (existing) {
     throw createIpcError('USERNAME_TAKEN', 'This username is already taken. Please choose another one.');
@@ -100,8 +100,8 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
   const params: Record<string, unknown> = { id: payload.id };
 
   if (payload.username !== undefined) {
-    // Check if the new username is already taken by another user
-    const checkStmt = db.prepare('SELECT id FROM users WHERE username = @username AND id != @id LIMIT 1');
+    // Check if the new username is already taken by another user (case-insensitive)
+    const checkStmt = db.prepare('SELECT id FROM users WHERE username = @username COLLATE NOCASE AND id != @id LIMIT 1');
     const existing = checkStmt.get({ username: payload.username, id: payload.id });
     if (existing) {
       throw createIpcError('USERNAME_TAKEN', 'This username is already taken. Please choose another one.');
@@ -148,7 +148,7 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
  */
 export function seedDefaultAdminUser(db: Database.Database): void {
   const stmt = db.prepare(`
-    SELECT id FROM users WHERE username = @username LIMIT 1
+    SELECT id FROM users WHERE username = @username COLLATE NOCASE LIMIT 1
   `);
   const existingUser = stmt.get({ username: DEFAULT_ADMIN_USER.username }) as { id: string } | undefined;
 
@@ -161,7 +161,7 @@ export function seedDefaultAdminUser(db: Database.Database): void {
 
 export function loginUser(db: Database.Database, payload: LoginUserPayload) {
   const stmt = db.prepare(
-    `SELECT ${USER_BASE_COLUMNS_WITH_PASSWORD} FROM users WHERE username = @username LIMIT 1`
+    `SELECT ${USER_BASE_COLUMNS_WITH_PASSWORD} FROM users WHERE username = @username COLLATE NOCASE LIMIT 1`
   );
   const record = stmt.get({ username: payload.username }) as DbUserRow | undefined;
   if (!record || !verifyPassword(payload.password, record.password)) {

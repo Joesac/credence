@@ -2,7 +2,7 @@ export const CREATE_USERS_TABLE = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   fullname TEXT NOT NULL,
-  username TEXT NOT NULL UNIQUE,
+  username TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password TEXT NOT NULL,
   is_disabled INTEGER NOT NULL DEFAULT 0,
   last_login TEXT,

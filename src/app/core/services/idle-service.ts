@@ -25,7 +25,6 @@ export class IdleService {
   private idleSubscription?: Subscription;
   private countdownSubscription?: Subscription;
   private timeoutSubscription?: Subscription;
-  private debugInterval?: Subscription;
   private logoutCallback?: () => void;
 
   startMonitoring(onLogoutCallback?: () => void): void {
@@ -40,8 +39,6 @@ export class IdleService {
     }
 
     this.ngZone.runOutsideAngular(() => {
-      console.log(`[IdleService] Monitoring started. Wait time: ${this.WARNING_THRESHOLD_MS / 1000 / 60}m. Warning window: ${this.WARNING_DURATION_MS / 1000}s.`);
-      
       const activityEvents$ = merge(
         fromEvent(document, 'mousemove'),
         fromEvent(document, 'click'),
@@ -55,43 +52,20 @@ export class IdleService {
           startWith(null),
           filter(() => !this.isWarningActive()), // Ignore activity while warning modal is shown
           switchMap(() => {
-            console.log('[IdleService] Activity detected. Resetting idle timer...');
-            this.startDebugCountdown(this.WARNING_THRESHOLD_MS);
             // Wait for 14 mins (WARNING_THRESHOLD_MS) of idle before emitting warning
             return timer(this.WARNING_THRESHOLD_MS);
           })
         )
         .subscribe(() => {
-          this.stopDebugCountdown();
           this.ngZone.run(() => this.triggerWarning());
         });
     });
-  }
-
-  private startDebugCountdown(durationMs: number): void {
-    this.stopDebugCountdown();
-    let secondsLeft = Math.floor(durationMs / 1000);
-    this.debugInterval = timer(0, 1000).subscribe(() => {
-      if (secondsLeft < 0) {
-        this.stopDebugCountdown();
-        return;
-      }
-      const mins = Math.floor(secondsLeft / 60);
-      const secs = secondsLeft % 60;
-      console.log(`[IdleService] Idle time remaining before warning: ${mins}m ${secs}s`);
-      secondsLeft -= 1;
-    });
-  }
-
-  private stopDebugCountdown(): void {
-    this.debugInterval?.unsubscribe();
   }
 
   stopMonitoring(): void {
     this.idleSubscription?.unsubscribe();
     this.timeoutSubscription?.unsubscribe();
     this.stopCountdown();
-    this.stopDebugCountdown();
     this.isWarningActive.set(false);
     this.logoutCallback = undefined; // Clear reference to component
   }
@@ -108,7 +82,6 @@ export class IdleService {
   }
 
   private triggerWarning(): void {
-    console.log('[IdleService] ⚠ Warning threshold reached. Starting countdown...');
     this.isWarningActive.set(true);
     let secondsLeft = this.WARNING_DURATION_MS / 1000;
 
@@ -116,7 +89,6 @@ export class IdleService {
 
     this.countdownSubscription = timer(0, 1000).subscribe(() => {
       this.ngZone.run(() => {
-        console.log(`[IdleService] ⚠ ${secondsLeft}s remaining...`);
         secondsLeft--;
         if (secondsLeft > 0) {
           this.warningSubject.next(secondsLeft);
