@@ -32,9 +32,16 @@ export class ToastService {
   }
 
   /**
+   * Triggers an amber warning toast
+   */
+  warning({ message, header, action }: SnackbarArgs): void {
+    this.show(message, 'warning', header, action);
+  }
+
+  /**
    * Orchestrates the MatSnackBar logic
    */
-  private show(message: string, type: 'success' | 'error', header?: string, action?: SnackbarAction): void {
+  private show(message: string, type: 'success' | 'error' | 'warning', header?: string, action?: SnackbarAction): void {
     const ref = this.snackBar.openFromComponent(ToastComponent, {
       duration: 5000, // Default display time of 5 seconds
       data: {

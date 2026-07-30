@@ -4,7 +4,7 @@ import { MatSnackBar, MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/materi
 export interface SnackbarData {
   header?: string;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'warning';
   actionLabel?: string;
 }
 

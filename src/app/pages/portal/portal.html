@@ -88,3 +88,10 @@
     <ng-template [cdkPortalOutlet]="rightSidebarService.portal()"></ng-template>
   </mat-sidenav>
 </mat-sidenav-container>
+
+@if (showSessionWarning()) {
+  <app-session-warning-modal 
+    [secondsRemaining]="sessionRemainingSeconds()"
+    (onContinue)="continueSession()"
+  />
+}

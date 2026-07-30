@@ -9,6 +9,12 @@
                 <span class="material-symbols-outlined text-lg">check_circle</span>
             </div>
         } 
+        <!-- Warning State Icon -->
+        @else if (data.type === 'warning') {
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-amber-400">
+                <span class="material-symbols-outlined text-lg">warning</span>
+            </div>
+        }
         <!-- Error State Icon -->
         @else {
             <div class="flex items-center justify-center w-8 h-8 rounded-full bg-rose-500/20 text-rose-400">
@@ -31,6 +37,7 @@
             class="px-3 py-1.5 text-xs font-semibold rounded-lg tracking-wide transition-all duration-150 cursor-pointer active:scale-95 focus:outline-none"
             [class]="{
                 'bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-300': data.type === 'success',
+                'bg-amber-500/25 hover:bg-amber-500/40 text-amber-300': data.type === 'warning',
                 'bg-rose-500/25 hover:bg-rose-500/40 text-rose-300': data.type === 'error'
             }">
         {{ data.actionLabel }}

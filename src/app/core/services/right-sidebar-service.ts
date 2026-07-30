@@ -1,9 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 import { Portal } from '@angular/cdk/portal';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class RightSidebarService {
   protected readonly isOpenSignal = signal<boolean>(false);
   protected readonly portalSignal = signal<Portal<unknown> | null>(null);
