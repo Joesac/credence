@@ -1,6 +1,7 @@
 import { Component, signal, computed, inject, effect } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
-import { UserDetails } from '../../members/components/user-details/user-details';
+import { MatDialog } from '@angular/material/dialog';
+import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from '@shared/components/data-table/directive/data-table-cell-directive';
@@ -12,6 +13,7 @@ import { ToastService } from '@core/components/toast/service/toast-service';
 import { Deposit } from '@interfaces/deposit.interface';
 import { Withdrawal } from '@interfaces/withdrawal.interface';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
 
 type HistoryTransaction = {
   id: string;
@@ -29,7 +31,7 @@ type HistoryTransaction = {
   selector: 'app-history',
   imports: [
     MatTabsModule,
-    UserDetails,
+    MemberSummary,
     DataTable,
     DataTableCellDirective,
     ActionsButtonComponent,
@@ -44,13 +46,11 @@ export class History {
   private readonly depositService = inject(DepositService);
   private readonly withdrawalService = inject(WithdrawalService);
   private readonly toastService = inject(ToastService);
+  private readonly dialog = inject(MatDialog);
   
   protected readonly selectedMember = signal<Member | null>(null);
   protected readonly isLoadingDeposits = signal<boolean>(false);
   protected readonly isLoadingWithdrawals = signal<boolean>(false);
-
-  protected readonly cancellingDepositId = signal<string | null>(null);
-  protected readonly cancellingWithdrawalId = signal<string | null>(null);
 
   protected readonly depositPage = signal<number>(1);
   protected readonly depositPageSize = signal<number>(10);
@@ -198,12 +198,13 @@ export class History {
       return;
     }
 
-    if (row.type === 'Deposit') {
-      void this.cancelDeposit(row);
-      return;
-    }
-
-    void this.cancelWithdrawal(row);
+    this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: `Cancel ${row.type}`,
+        message: `Are you sure you want to cancel this ${row.type.toLowerCase()} transaction (${row.transactionId}) by ${this.selectedMember()?.fullname}?`,
+        onConfirm: () => row.type === 'Deposit' ? this.cancelDeposit(row) : this.cancelWithdrawal(row),
+      } as ConfirmDialogData,
+    });
   }
 
   private async cancelDeposit(row: HistoryTransaction): Promise<void> {
@@ -212,24 +213,13 @@ export class History {
       return;
     }
 
-    this.cancellingDepositId.set(row.id);
-    try {
-      const response = await this.depositService.deleteDeposit(row.id);
-      if (!response.success) {
-        this.toastService.error({ message: 'Unable to cancel deposit.' });
-        return;
-      }
-      this.toastService.success({ message: 'Deposit cancelled successfully.' });
-      if (this.selectedMember()?.id === member.id) {
-        await this.fetchDeposits(member.id, this.depositPage(), this.depositPageSize());
-      }
-    } catch (error) {
-      const ipcError = this.depositService.extractIpcError(error);
-      this.toastService.error({ message: (ipcError.message || '') as string });
-    } finally {
-      if (this.cancellingDepositId() === row.id) {
-        this.cancellingDepositId.set(null);
-      }
+    const response = await this.depositService.deleteDeposit(row.id);
+    if (!response.success) {
+      throw new Error('Unable to cancel deposit.');
+    }
+    this.toastService.success({ message: 'Deposit cancelled successfully.' });
+    if (this.selectedMember()?.id === member.id) {
+      await this.fetchDeposits(member.id, this.depositPage(), this.depositPageSize());
     }
   }
 
@@ -239,24 +229,13 @@ export class History {
       return;
     }
 
-    this.cancellingWithdrawalId.set(row.id);
-    try {
-      const response = await this.withdrawalService.deleteWithdrawal(row.id);
-      if (!response.success) {
-        this.toastService.error({ message: 'Unable to cancel withdrawal.' });
-        return;
-      }
-      this.toastService.success({ message: 'Withdrawal cancelled successfully.' });
-      if (this.selectedMember()?.id === member.id) {
-        await this.fetchWithdrawals(member.id, this.withdrawalPage(), this.withdrawalPageSize());
-      }
-    } catch (error) {
-      const ipcError = this.withdrawalService.extractIpcError(error);
-      this.toastService.error({ message: (ipcError.message || '') as string });
-    } finally {
-      if (this.cancellingWithdrawalId() === row.id) {
-        this.cancellingWithdrawalId.set(null);
-      }
+    const response = await this.withdrawalService.deleteWithdrawal(row.id);
+    if (!response.success) {
+      throw new Error('Unable to cancel withdrawal.');
+    }
+    this.toastService.success({ message: 'Withdrawal cancelled successfully.' });
+    if (this.selectedMember()?.id === member.id) {
+      await this.fetchWithdrawals(member.id, this.withdrawalPage(), this.withdrawalPageSize());
     }
   }
 

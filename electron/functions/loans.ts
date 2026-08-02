@@ -213,8 +213,8 @@ export function updateLoan(db: Database.Database, payload: UpdateLoanPayload) {
 
     const stmt = db.prepare(`
     UPDATE loans
-    SET ${fields.join(', ')}, date_created = date_created
-    WHERE id = @id
+    SET ${fields.join(', ')}, date_updated = datetime('now')
+    WHERE id = @id AND is_cancelled = 0
   `);
     const result = stmt.run(params);
     if (result.changes === 0) {

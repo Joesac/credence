@@ -6,16 +6,18 @@ import { ToastService } from '@core/components/toast/service/toast-service';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
 
 @Component({
-  selector: 'app-user-details',
+  selector: 'app-member-summary',
   standalone: true,
   imports: [DecimalPipe],
-  templateUrl: './user-details.html',
-  styleUrl: './user-details.scss',
+  templateUrl: './member-summary.html',
+  styleUrl: './member-summary.scss',
   host: { 'class': 'w-full' }
 })
-export class UserDetails {
+export class MemberSummary {
   readonly user = input.required<Member>();
-  readonly showFinancialStatus = input<boolean>(false);
+  readonly showTotalDeposits = input<boolean>(false);
+  readonly showTotalWithdrawals = input<boolean>(false);
+  readonly showAvailableBalance = input<boolean>(false);
 
   private readonly memberService = inject(MemberService);
   private readonly toastService = inject(ToastService);
@@ -25,12 +27,15 @@ export class UserDetails {
   protected readonly isFinancialSummaryLoading = signal(false);
   private currentRequestId = 0;
 
+  private anyFinancialShown(): boolean {
+    return this.showTotalDeposits() || this.showTotalWithdrawals() || this.showAvailableBalance();
+  }
+
   constructor() {
     effect(() => {
       const member = this.user();
-      const shouldShow = this.showFinancialStatus();
-      
-      if (!member || !shouldShow) {
+
+      if (!member || !this.anyFinancialShown()) {
         this.financialSummary.set(null);
         this.isFinancialSummaryLoading.set(false);
         return;
@@ -42,7 +47,7 @@ export class UserDetails {
 
   refreshFinancialSummary(): void {
     const member = this.user();
-    if (!member || !this.showFinancialStatus()) return;
+    if (!member || !this.anyFinancialShown()) return;
     void this.loadFinancialSummary(member.id);
   }
 

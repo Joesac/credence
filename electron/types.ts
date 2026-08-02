@@ -232,6 +232,8 @@ export type DbMemberRow = {
   is_deleted: number;
   is_disabled: number;
   is_synced: number;
+  creator_fullname: string | null;
+  creator_username: string | null;
 };
 
 export type SanitizedMember = DbMemberRow;

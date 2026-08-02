@@ -26,7 +26,7 @@
             </tr>
           } @else {
             @for (row of paginatedData(); track $index) {
-              <tr class="border-b border-border-base hover:bg-surface-hover transition-colors">
+              <tr class="border-b border-border-base hover:bg-surface-hover transition-colors" [class.cursor-pointer]="onRowClick()" (click)="handleRowClick(row)">
                 @for (col of columns(); track col.key) {
                   @let cellValue = getCellValue(row, col);
                   @let template = getCellTemplate(col.key);

@@ -86,11 +86,19 @@ export function fetchMembers(
 }
 
 export function fetchMemberById(db: Database.Database, id: string) {
-  const stmt = db.prepare(
-    `SELECT ${MEMBER_BASE_COLUMNS} FROM members WHERE id = @id LIMIT 1`
-  );
+  const stmt = db.prepare(`
+    SELECT
+      m.id, m.fullname, m.account_number, m.telephoneNumber, m.location,
+      m.creator_id, m.date_created, m.date_updated, m.is_deleted, m.is_disabled, m.is_synced,
+      u.fullname AS creator_fullname,
+      u.username AS creator_username
+    FROM members m
+    LEFT JOIN users u ON u.id = m.creator_id
+    WHERE m.id = @id AND m.is_deleted = 0
+    LIMIT 1
+  `);
   const record = stmt.get({ id }) as DbMemberRow | undefined;
-  if (!record || record.is_deleted) {
+  if (!record) {
     return null;
   }
   return sanitizeMember(record);

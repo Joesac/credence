@@ -37,6 +37,6 @@ export class ActionsButtonComponent {
   onActionSelected = output<ActionButtonOption>();
 
   protected _onActionSelected(event: MouseEvent, action: ActionButtonOption) {
-    this.onActionSelected.emit(action)
+    this.onActionSelected.emit(action);
   }
 }

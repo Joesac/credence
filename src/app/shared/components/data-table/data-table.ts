@@ -38,6 +38,9 @@ export class DataTable<T> {
   readonly loadingMessage = input<string>('Loading...');
   readonly emptyMessage = input<string>('No records available.');
 
+  // Optional click handler function passed from consumer
+  readonly onRowClick = input<((row: T) => void) | undefined>(undefined);
+
   readonly currentPage = model<number>(1);
   readonly pageSize = model<number>(10);
 
@@ -64,6 +67,10 @@ export class DataTable<T> {
     const start = (this.currentPage() - 1) * this.pageSize();
     return this.data().slice(start, start + this.pageSize());
   });
+
+  protected handleRowClick(row: T): void {
+    this.onRowClick()?.(row);
+  }
 
   protected getCellValue(row: T, column: ColumnDef<T>): ColumnCellValue | null {
     if (column.formatter) {

@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content>
+  <p class="text-text-muted">{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" [disabled]="isProcessing()">Cancel</button>
+  <button matButton="filled" color="primary" (click)="confirm()" [disabled]="isProcessing()">
+    @if (isProcessing()) {
+      <span>Confirming...</span>
+    } @else {
+      <span>Confirm</span>
+    }
+  </button>
+</mat-dialog-actions>

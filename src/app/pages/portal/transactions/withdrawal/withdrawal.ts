@@ -1,9 +1,10 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
-import { UserDetails } from '../../members/components/user-details/user-details';
+import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
+import { DisableCoverComponent } from '@shared/components/disable-cover-component/disable-cover-component';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { AuthService } from '../../../auth/services/auth-service';
 import { WithdrawalService } from './service/withdrawal-service';
@@ -18,9 +19,10 @@ interface withdrawalData {
   selector: 'app-withdrawal',
   imports: [
     FormField, 
-    UserDetails, 
+    MemberSummary, 
     Inputfield, 
-    MemberSelectionDropdown
+    MemberSelectionDropdown,
+    DisableCoverComponent
   ],
   templateUrl: './withdrawal.html',
   styleUrl: './withdrawal.scss',
@@ -31,7 +33,7 @@ export class Withdrawal {
   private readonly authService = inject(AuthService);
   private readonly withdrawalService = inject(WithdrawalService);
   private readonly ipcBridgeService = inject(IpcBridgeService);
-  private readonly userDetailsComponent = viewChild(UserDetails);
+  private readonly memberSummaryComponent = viewChild(MemberSummary);
 
   protected readonly selectedMember = signal<Member | null>(null);
   protected readonly isSubmitting = signal(false);
@@ -92,7 +94,7 @@ export class Withdrawal {
       await this.withdrawalService.addWithdrawal(payload);
       this.toastService.success({ message: 'Withdrawal recorded successfully.' });
       this.withdrawalForm().reset({ ...this.INITIAL_DATA });
-      this.userDetailsComponent()?.refreshFinancialSummary();
+      this.memberSummaryComponent()?.refreshFinancialSummary();
     } catch (error) {
       const ipcErrorObj = this.ipcBridgeService.extractIpcError(error);
       

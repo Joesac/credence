@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
 import { MatButtonModule } from "@angular/material/button";
-import { UserDetails } from '../../members/components/user-details/user-details';
+import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Loan } from '@interfaces/loan.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
@@ -10,6 +10,7 @@ import { LoanSelectionDropdownComponent } from '@shared/components/loan-selectio
 import { LoanDetails, LoanDetailsData } from '../components/loan-details/loan-details';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { UtilsService } from '@shared/services/utils-service';
+import { DisableCoverComponent } from '@shared/components/disable-cover-component/disable-cover-component';
 import { AuthService } from '../../../auth/services/auth-service';
 import { LoanService } from '../service/loan-service';
 import { LoanRepaymentList } from '../components/loan-repayment-list/loan-repayment-list';
@@ -21,15 +22,16 @@ interface repaymentData {
 
 @Component({
   selector: 'app-repayment',
-   imports: [
+  imports: [
     MatButtonModule,
-    FormField, 
-    UserDetails, 
-    Inputfield, 
+    FormField,
+    MemberSummary,
+    Inputfield,
     MemberSelectionDropdown,
     LoanSelectionDropdownComponent,
     LoanDetails,
-    LoanRepaymentList
+    LoanRepaymentList,
+    DisableCoverComponent
   ],
   templateUrl: './repayment.html',
   styleUrl: './repayment.scss'
@@ -40,7 +42,7 @@ export class Repayment {
   private readonly loanService = inject(LoanService);
   private readonly utilService = inject(UtilsService);
 
-  private readonly userDetailsComponent = viewChild(UserDetails);
+  private readonly memberSummaryComponent = viewChild(MemberSummary);
   private readonly loanDropdownComponent = viewChild(LoanSelectionDropdownComponent);
 
   protected readonly viewRepayments = signal(false);
@@ -84,7 +86,7 @@ export class Repayment {
     this.selectedLoan.set(loan);
   }
 
-    protected async onSubmit(event: Event) {
+  protected async onSubmit(event: Event) {
     event.preventDefault();
 
     if (this.repaymentForm().invalid()) {
@@ -133,7 +135,7 @@ export class Repayment {
       this.repaymentForm().reset({ ...this.INITIAL_DATA });
       await this.refreshSelectedLoanDetails(member.id, loan.id);
       this.loanDropdownComponent()?.refreshLoans();
-      this.userDetailsComponent()?.refreshFinancialSummary();
+      this.memberSummaryComponent()?.refreshFinancialSummary();
     } catch (error) {
       console.error('Repayment submission failed', error);
       const message =
@@ -144,6 +146,15 @@ export class Repayment {
     } finally {
       this.isSubmitting.set(false);
     }
+  }
+
+  protected async onRepaymentCancelled(): Promise<void> {
+    const member = this.selectedMember();
+    const loan = this.selectedLoan();
+    if (!member || !loan) return;
+    await this.refreshSelectedLoanDetails(member.id, loan.id);
+    this.loanDropdownComponent()?.refreshLoans();
+    this.memberSummaryComponent()?.refreshFinancialSummary();
   }
 
   private formatCurrency(amount: number): string {

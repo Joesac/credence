@@ -4,6 +4,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from '@shared/components/data-table/directive/data-table-cell-directive';
@@ -18,6 +19,7 @@ import { IpcBridgeService } from '@core/services/ipc-bridge-service';
 import { RightSidebarService } from '@core/services/right-sidebar-service';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
 import { CdkPortal, PortalModule } from '@angular/cdk/portal';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
 
 type DailyTransaction = {
   id: string;
@@ -64,6 +66,7 @@ export class Daily {
   private readonly toastService = inject(ToastService);
   private readonly ipcBridge = inject(IpcBridgeService);
   protected readonly rightSidebarService = inject(RightSidebarService);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild('viewDetailsPortal', { static: true }) viewDetailsPortal!: CdkPortal;
 
@@ -72,9 +75,6 @@ export class Daily {
   protected readonly isLoadingWithdrawals = signal<boolean>(false);
   protected readonly isLoadingSummary = signal<boolean>(false);
   protected readonly dailySummary = signal<DailySummary | null>(null);
-
-  protected readonly cancellingDepositId = signal<string | null>(null);
-  protected readonly cancellingWithdrawalId = signal<string | null>(null);
 
   protected readonly selectedTransaction = signal<DailyTransaction | null>(null);
 
@@ -213,56 +213,35 @@ export class Daily {
       return;
     }
 
-    if (row.type === 'Deposit') {
-      void this.cancelDeposit(row);
-      return;
-    }
-
-    void this.cancelWithdrawal(row);
+    this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: `Cancel ${row.type}`,
+        message: `Are you sure you want to cancel this ${row.type.toLowerCase()} transaction (${row.transactionId}) by ${row.memberName}?`,
+        onConfirm: () => row.type === 'Deposit' ? this.cancelDeposit(row) : this.cancelWithdrawal(row),
+      } as ConfirmDialogData,
+    });
   }
 
   private async cancelDeposit(row: DailyTransaction): Promise<void> {
     const date = this.selectedDate();
-    this.cancellingDepositId.set(row.id);
-    try {
-      const response = await this.depositService.deleteDeposit(row.id);
-      if (!response.success) {
-        this.toastService.error({ message: 'Unable to cancel deposit.' });
-        return;
-      }
-      this.toastService.success({ message: 'Deposit cancelled successfully.' });
-      void this.fetchDeposits(date, this.depositPage(), this.depositPageSize());
-      void this.fetchDailySummary(date);
-    } catch (error) {
-      const ipcError = this.depositService.extractIpcError(error);
-      this.toastService.error({ message: (ipcError.message || '') as string });
-    } finally {
-      if (this.cancellingDepositId() === row.id) {
-        this.cancellingDepositId.set(null);
-      }
+    const response = await this.depositService.deleteDeposit(row.id);
+    if (!response.success) {
+      throw new Error('Unable to cancel deposit.');
     }
+    this.toastService.success({ message: 'Deposit cancelled successfully.' });
+    void this.fetchDeposits(date, this.depositPage(), this.depositPageSize());
+    void this.fetchDailySummary(date);
   }
 
   private async cancelWithdrawal(row: DailyTransaction): Promise<void> {
     const date = this.selectedDate();
-    this.cancellingWithdrawalId.set(row.id);
-    try {
-      const response = await this.withdrawalService.deleteWithdrawal(row.id);
-      if (!response.success) {
-        this.toastService.error({ message: 'Unable to cancel withdrawal.' });
-        return;
-      }
-      this.toastService.success({ message: 'Withdrawal cancelled successfully.' });
-      void this.fetchWithdrawals(date, this.withdrawalPage(), this.withdrawalPageSize());
-      void this.fetchDailySummary(date);
-    } catch (error) {
-      const ipcError = this.withdrawalService.extractIpcError(error);
-      this.toastService.error({ message: (ipcError.message || '') as string });
-    } finally {
-      if (this.cancellingWithdrawalId() === row.id) {
-        this.cancellingWithdrawalId.set(null);
-      }
+    const response = await this.withdrawalService.deleteWithdrawal(row.id);
+    if (!response.success) {
+      throw new Error('Unable to cancel withdrawal.');
     }
+    this.toastService.success({ message: 'Withdrawal cancelled successfully.' });
+    void this.fetchWithdrawals(date, this.withdrawalPage(), this.withdrawalPageSize());
+    void this.fetchDailySummary(date);
   }
 
   private formatDateParam(date: Date): string {

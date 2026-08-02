@@ -1,14 +1,16 @@
 <div class="font-medium">
-    <div class="flex gap-2 items-center text-xl">
+    <div class="flex items-center text-xl">
         @for(page of pages; track $index) {
             @let isActive = $index === pages.length - 1;
-            <div class="flex items-center gap-2">
+            <div class="flex items-center">
                 <span [class.text-text-main]="isActive" [class.text-text-muted]="!isActive">
                     {{ page }}
                 </span>
                 
                 @if(!isActive) {
-                    <span class="text-text-muted/40"> > </span>
+                     <span class="material-symbols-outlined text-text-muted opacity-60">
+                        chevron_right
+                    </span>
                 }
             </div>
         }

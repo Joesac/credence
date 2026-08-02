@@ -6,49 +6,58 @@
     
     @if (selectedMember()) {
         <section class="mt-4 flex flex-col gap-4 w-full">
-            <app-user-details
+            <app-member-summary
                 [user]="selectedMember()!"
-                [showFinancialStatus]="true"
+                [showTotalDeposits]="true"
+                [showAvailableBalance]="true"
             />
 
             <form (submit)="onSubmit($event)">
-                <div class="card flex flex-col gap-4">
-                    <app-dropdown 
-                        [formField]="depositForm.paymentMethod"
-                        label="Payment Method"
-                        placeholder="Select payment method"
-                        [collection]="PAYMENT_METHODS"
-                    />
+                <fieldset [disabled]="selectedMember()?.is_disabled">
+                    <div class="card flex flex-col gap-4 relative">
+                        @if (selectedMember()?.is_disabled) {
+                           <app-disable-cover-component
+                            [header]="'Member is disabled'"
+                            [message]="'Please enable the member to perform deposits'" />
+                        }
 
-                    <app-inputfield
-                        [formField]="depositForm.amount"
-                        label="Amount"
-                        inputMode="decimal"
-                        placeholder="Enter deposit amount"
-                    />
-
-                    <app-inputfield
-                        [formField]="depositForm.refreshmentToken"
-                        label="Refreshment Token"
-                        inputMode="numeric"
-                        placeholder="Enter refreshment token"
-                    />
-
-                    <app-inputfield
-                        [formField]="depositForm.notes"
-                        label="Notes (optional)"
-                        placeholder="Enter deposit notes"
-                        type="textarea"
-                    />
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            class="btn-primary"
-                            [disabled]="depositForm().invalid() || isSubmitting()"
-                        >{{ isSubmitting() ? 'Recording...' : 'Make Deposit' }}</button>
+                        <app-dropdown 
+                            [formField]="depositForm.paymentMethod"
+                            label="Payment Method"
+                            placeholder="Select payment method"
+                            [collection]="PAYMENT_METHODS"
+                        />
+    
+                        <app-inputfield
+                            [formField]="depositForm.amount"
+                            label="Amount"
+                            inputMode="decimal"
+                            placeholder="Enter deposit amount"
+                        />
+    
+                        <app-inputfield
+                            [formField]="depositForm.refreshmentToken"
+                            label="Refreshment Token"
+                            inputMode="numeric"
+                            placeholder="Enter refreshment token"
+                        />
+    
+                        <app-inputfield
+                            [formField]="depositForm.notes"
+                            label="Notes (optional)"
+                            placeholder="Enter deposit notes"
+                            type="textarea"
+                        />
+    
+                        <div class="flex justify-end">
+                            <button
+                                type="submit"
+                                class="btn-primary"
+                                [disabled]="depositForm().invalid() || isSubmitting()"
+                            >{{ isSubmitting() ? 'Recording...' : 'Make Deposit' }}</button>
+                        </div>
                     </div>
-                </div>
+                </fieldset>
             </form>
         </section>
     }

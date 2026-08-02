@@ -1,10 +1,11 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
-import { UserDetails } from '../../members/components/user-details/user-details';
+import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '../../../../interfaces/member.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
+import { DisableCoverComponent } from '@shared/components/disable-cover-component/disable-cover-component';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { AuthService } from '../../../auth/services/auth-service';
 import { DepositService } from './service/deposit-service';
@@ -19,7 +20,14 @@ interface DepositData {
 
 @Component({
   selector: 'app-deposit',
-  imports: [Dropdown, FormField, UserDetails, Inputfield, MemberSelectionDropdown],
+  imports: [
+    Dropdown, 
+    FormField, 
+    MemberSummary, 
+    Inputfield, 
+    MemberSelectionDropdown, 
+    DisableCoverComponent
+  ],
   templateUrl: './deposit.html',
   styleUrl: './deposit.scss',
   host: { 'class': 'w-full flex justify-center' }
@@ -29,7 +37,7 @@ export class Deposit {
   private readonly authService = inject(AuthService);
   private readonly depositService = inject(DepositService);
 
-  private readonly userDetailsComponent = viewChild(UserDetails);
+  private readonly memberSummaryComponent = viewChild(MemberSummary);
 
   protected readonly selectedMember = signal<Member | null>(null);
   protected readonly isSubmitting = signal(false);
@@ -106,7 +114,7 @@ export class Deposit {
       await this.depositService.addDeposit(payload);
       this.toastService.success({ message: 'Deposit recorded successfully.' });
       this.depositForm().reset({ ...this.INITIAL_DATA });
-      this.userDetailsComponent()?.refreshFinancialSummary();
+      this.memberSummaryComponent()?.refreshFinancialSummary();
     } catch (error) {
       console.error('Deposit submission failed', error);
       this.toastService.error({ message: 'Unable to record deposit. Please try again.' });

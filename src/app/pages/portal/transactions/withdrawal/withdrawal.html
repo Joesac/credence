@@ -6,13 +6,21 @@
     
     @if (selectedMember()) {
         <section class="mt-4 flex flex-col gap-4 w-full">
-            <app-user-details
+            <app-member-summary
                 [user]="selectedMember()!"
-                [showFinancialStatus]="true"
+                [showTotalDeposits]="true"
+                [showTotalWithdrawals]="true"
+                [showAvailableBalance]="true"
             />
 
             <form (submit)="onSubmit($event)">
-                <div class="card flex flex-col gap-4">
+                <div class="card flex flex-col gap-4 relative">
+                    @if (selectedMember()?.is_disabled) {
+                        <app-disable-cover-component
+                        [header]="'Member is disabled'"
+                        [message]="'Please enable the member to perform withdrawals'" />
+                    }
+
                     <app-inputfield
                         [formField]="withdrawalForm.amount"
                         label="Amount"

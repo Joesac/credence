@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS loans (
   notes TEXT,
   is_cancelled INTEGER NOT NULL DEFAULT 0,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),
+  date_updated TEXT NOT NULL DEFAULT (datetime('now')),
   is_synced INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (member_id) REFERENCES members(id) ON UPDATE CASCADE ON DELETE CASCADE,
   FOREIGN KEY (issuer_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE

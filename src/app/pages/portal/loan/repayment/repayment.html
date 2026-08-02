@@ -19,7 +19,7 @@
     @if (!viewRepayments()) {
         <section class="mt-4 flex flex-col gap-4 w-full">
             @if (selectedMember()) {
-                    <app-user-details [user]="selectedMember()!" />
+                    <app-member-summary [user]="selectedMember()!" />
             }
 
             @if (loanDetails()) {
@@ -28,7 +28,13 @@
 
             @if (selectedMember() && loanDetails()) {
                 <form (submit)="onSubmit($event)" >
-                    <div class="card flex flex-col gap-4">
+                    <div class="card flex flex-col gap-4 relative">
+                        @if (selectedMember()?.is_disabled) {
+                            <app-disable-cover-component
+                                [header]="'Member is disabled'"
+                                [message]="'Please enable the member to accept Repayments'" />
+                        }
+
                         <app-inputfield
                             [formField]="repaymentForm.amount"
                             label="Amount"
@@ -56,7 +62,7 @@
         </section>
     } @else {
         <section class="mt-4">
-            <app-loan-repayment-list [loanId]="selectedLoan()?.id ?? ''" />
+            <app-loan-repayment-list [loanId]="selectedLoan()?.id ?? ''" (onRepaymentCancelled)="onRepaymentCancelled()" />
         </section>
     }
 </div>

@@ -1,0 +1,124 @@
+@let m = member();
+@let isActive = m.is_disabled === 0;
+
+<div class="card flex flex-col gap-6">
+  <div class="flex flex-col gap-3">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-brand-primary/10 text-brand-primary font-semibold text-lg shrink-0">
+          {{ m.fullname.charAt(0).toUpperCase() }}
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-text-main leading-tight">{{ m.fullname }}</h2>
+          <p class="text-sm text-text-muted mt-0.5">Account #{{ m.account_number }}</p>
+        </div>
+      </div>
+
+      <span
+        class="rounded-full text-xs font-semibold px-3 py-1.5 shrink-0"
+        [class.bg-emerald-500/10]="isActive"
+        [class.text-emerald-600]="isActive"
+        [class.bg-rose-500/10]="!isActive"
+        [class.text-rose-600]="!isActive"
+      >
+        {{ isActive ? 'Active' : 'Disabled' }}
+      </span>
+    </div>
+  </div>
+
+  <hr class="border-border-base" />
+
+  <div class="flex flex-col gap-4">
+    <h3 class="text-xs uppercase tracking-wide text-text-muted font-semibold">Contact Information</h3>
+
+    <div class="flex gap-3">
+      <div class="mt-0.5 text-text-muted/60">
+        <span class="material-symbols-outlined text-xl">location_on</span>
+      </div>
+      <div>
+        <p class="text-xs text-text-muted">Location</p>
+        <p class="text-sm font-medium text-text-main">{{ m.location }}</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="mt-0.5 text-text-muted/60">
+        <span class="material-symbols-outlined text-xl">call</span>
+      </div>
+      <div>
+        <p class="text-xs text-text-muted">Phone Number</p>
+        <p class="text-sm font-medium text-text-main">{{ m.telephoneNumber }}</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="border-border-base" />
+
+  <div class="flex flex-col gap-4">
+    <h3 class="text-xs uppercase tracking-wide text-text-muted font-semibold">Financial Summary</h3>
+
+    @if (isFinancialSummaryLoading()) {
+      <div class="py-4 text-center">
+        <span class="text-sm text-text-muted">Fetching...</span>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 gap-3">
+        <div class="rounded-xl border border-border-base bg-surface-hover p-4">
+          <p class="text-xs text-text-muted">Total Deposits</p>
+          <p class="text-lg font-semibold text-text-main mt-1">{{ (financialSummary()?.totalDeposits ?? 0) | number:'1.2-2' }}</p>
+        </div>
+
+        <div class="rounded-xl border border-border-base bg-surface-hover p-4">
+          <p class="text-xs text-text-muted">Total Withdrawals</p>
+          <p class="text-lg font-semibold text-text-main mt-1">{{ (financialSummary()?.totalWithdrawals ?? 0) | number:'1.2-2' }}</p>
+        </div>
+
+        <div class="rounded-xl border border-border-base bg-brand-primary/5 p-4">
+          <p class="text-xs text-text-muted">Available Balance</p>
+          <p class="text-lg font-semibold text-brand-primary mt-1">{{ (financialSummary()?.availableBalance ?? 0) | number:'1.2-2' }}</p>
+        </div>
+      </div>
+      <p class="text-xs text-text-muted">Excludes cancelled transactions.</p>
+    }
+  </div>
+
+  <hr class="border-border-base" />
+
+  <div class="flex flex-col gap-4">
+    <h3 class="text-xs uppercase tracking-wide text-text-muted font-semibold">Metadata</h3>
+
+    <div class="flex gap-3">
+      <div class="mt-0.5 text-text-muted/60">
+        <span class="material-symbols-outlined text-xl">calendar_add_on</span>
+      </div>
+      <div>
+        <p class="text-xs text-text-muted">Member Since</p>
+        <p class="text-sm font-medium text-text-main">{{ formatDate(m.date_created) }}</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="mt-0.5 text-text-muted/60">
+        <span class="material-symbols-outlined text-xl">update</span>
+      </div>
+      <div>
+        <p class="text-xs text-text-muted">Last Updated</p>
+        <p class="text-sm font-medium text-text-main">{{ formatDate(m.date_updated) }}</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="mt-0.5 text-text-muted/60">
+        <span class="material-symbols-outlined text-xl">person_add</span>
+      </div>
+      <div>
+        <p class="text-xs text-text-muted">Registered By</p>
+        @if (m.creator_fullname) {
+          <p class="text-sm font-medium text-text-main">{{ m.creator_fullname }} <span class="text-text-muted">({{ m.creator_username }})</span></p>
+        } @else {
+          <p class="text-sm text-text-muted">Unknown</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-<button matIconButton [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu" class="flex items-center justify-center">
+<button matIconButton [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()" aria-label="Example icon-button with a menu" class="flex items-center justify-center">
     <span class="material-symbols-outlined">more_vert</span>
 </button>
 <mat-menu #menu="matMenu">

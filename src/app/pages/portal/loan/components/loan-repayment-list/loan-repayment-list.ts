@@ -1,4 +1,5 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from '@shared/components/data-table/directive/data-table-cell-directive';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
@@ -7,6 +8,7 @@ import { LoanRepayment, PaginatedLoanRepayments } from '@interfaces/loan.interfa
 import { LoanService } from '../../service/loan-service';
 import { CurrencyFormatterPipe } from '@shared/pipes/currency-formatter-pipe';
 import { DateFormatterPipe } from '@shared/pipes/date-formatter-pipe';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
 
 @Component({
   selector: 'app-loan-repayment-list',
@@ -24,10 +26,13 @@ export class LoanRepaymentList {
   private readonly toastService = inject(ToastService);
   private readonly currencyPipe = inject(CurrencyFormatterPipe);
   private readonly datePipe = inject(DateFormatterPipe);
+  private readonly dialog = inject(MatDialog);
   private requestId = 0;
 
   /** The loan whose repayments should be listed. */
   readonly loanId = input.required<string>();
+
+  readonly onRepaymentCancelled = output<void>();
 
   protected readonly repayments = signal<LoanRepayment[]>([]);
   protected readonly isLoading = signal(false);
@@ -60,11 +65,11 @@ export class LoanRepaymentList {
         return;
       }
 
-      void this.loadRepayments(loanId, page, pageSize);
+      void this.loanRepayments(loanId, page, pageSize);
     });
   }
 
-  private async loadRepayments(loanId: string, page: number, pageSize: number): Promise<void> {
+  private async loanRepayments(loanId: string, page: number, pageSize: number): Promise<void> {
     const requestId = ++this.requestId;
     this.isLoading.set(true);
 
@@ -95,23 +100,21 @@ export class LoanRepaymentList {
   }
 
   protected handleActionSelection(option: ActionButtonOption, repayment: LoanRepayment): void {
-    if (option.id === 'cancel') {
-      void this.cancelRepayment(repayment);
-    }
+    if (option.id !== 'cancel') return;
+
+    this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Cancel Repayment',
+        message: `Are you sure you want to cancel this repayment of ${this.currencyPipe.transform(repayment.amount)}?`,
+        onConfirm: () => this.cancelRepayment(repayment),
+      } as ConfirmDialogData,
+    });
   }
 
   private async cancelRepayment(repayment: LoanRepayment): Promise<void> {
-    this.isLoading.set(true);
-
-    try {
-      await this.loanService.updateLoanRepayment({ id: repayment.id, isCancelled: true });
-      this.toastService.success({ message: 'Repayment cancelled' });
-      await this.loadRepayments(this.loanId(), this.currentPage(), this.pageSize());
-    } catch (error) {
-      console.error('Failed to cancel repayment', error);
-      this.toastService.error({ message: 'Could not cancel repayment' });
-    } finally {
-      this.isLoading.set(false);
-    }
+    await this.loanService.updateLoanRepayment({ id: repayment.id, isCancelled: true });
+    this.toastService.success({ message: 'Repayment cancelled' });
+    await this.loanRepayments(this.loanId(), this.currentPage(), this.pageSize());
+    this.onRepaymentCancelled.emit();
   }
 }

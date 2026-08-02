@@ -1,3 +1,5 @@
+@let interestAmount = (details().amountLoaned * (details().rate / 100));
+
 <div class="card flex flex-col gap-2">
     <h3 class="font-medium text-xl text-text-main">Loan details</h3>
     <div class="grid gap-6 md:grid-cols-3">
@@ -18,20 +20,20 @@
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-text-muted">Total Left</p>
-                <p class="text-base text-text-main">{{ details().amountLoaned - details().amountPaid | currencyFormatter}}</p>
+                <p class="text-base text-text-main">{{ (details().amountLoaned + interestAmount) - details().amountPaid | currencyFormatter}}</p>
             </div>
         </div>
 
         <div class="flex gap-3">
             <div>
                 <p class="tracking-wide text-text-muted">Interest Rate</p>
-                <p class="text-base text-text-main">{{ details().rate }}% ({{ (details().amountLoaned * (details().rate / 100)) | currencyFormatter }})</p>
+                <p class="text-base text-text-main">{{ details().rate }}% ({{ interestAmount | currencyFormatter }})</p>
             </div>
         </div>
 
         <div class="flex gap-3">
             <div>
-                <p class="tracking-wide text-text-muted">Due Created</p>
+                <p class="tracking-wide text-text-muted">Date Created</p>
                 <p class="text-base text-text-main">{{ details().dateCreated | dateFormatter }}</p>
             </div>
         </div>

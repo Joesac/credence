@@ -1,4 +1,7 @@
-import { Component, effect, inject, signal, debounced, OnInit, untracked } from '@angular/core';
+import { Component, effect, inject, signal, debounced, OnInit, untracked, ViewChild } from '@angular/core';
+import { CdkPortal, PortalModule } from '@angular/cdk/portal';
+import { MatDialog } from '@angular/material/dialog';
+import { MemberDetails } from '../components/member-details/member-details';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from "@shared/components/data-table/directive/data-table-cell-directive";
 import { Inputfield } from '@shared/components/inputfield/inputfield';
@@ -7,6 +10,8 @@ import { MemberService } from '../service/member-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
 import { UtilsService } from '@shared/services/utils-service';
+import { RightSidebarService } from '@core/services/right-sidebar-service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
 
 @Component({
   selector: 'app-directory',
@@ -15,7 +20,9 @@ import { UtilsService } from '@shared/services/utils-service';
     DataTable,
     DataTableCellDirective,
     Inputfield,
-    ActionsButtonComponent
+    ActionsButtonComponent,
+    MemberDetails,
+    PortalModule,
   ],
   templateUrl: './directory.html',
   styleUrl: './directory.scss',
@@ -24,7 +31,11 @@ export class Directory implements OnInit {
   private readonly memberService = inject(MemberService);
   private readonly toastService = inject(ToastService);
   private readonly utilsService = inject(UtilsService);
+  protected readonly rightSidebarService = inject(RightSidebarService);
+  private readonly dialog = inject(MatDialog);
   private requestId = 0;
+
+  @ViewChild('memberDetailsPortal', { static: true }) memberDetailsPortal!: CdkPortal;
 
   protected readonly members = signal<Member[]>([]);
   protected readonly isLoading = signal(false);
@@ -34,6 +45,10 @@ export class Directory implements OnInit {
 
   protected readonly searchQuery = signal<string | null>('');
   protected readonly debouncedQuery = debounced(this.searchQuery, 300);
+
+  protected readonly selectedMember = signal<Member | null>(null);
+  protected readonly isMemberLoading = signal(false);
+  private memberRequestId = 0;
 
   protected readonly tableConfig: ColumnDef<Member | { action: string }>[] = [
     { key: 'fullname', header: 'Name' },
@@ -94,6 +109,28 @@ export class Directory implements OnInit {
     void this.loadMembers(this.currentPage(), this.pageSize(), search);
   }
 
+  protected readonly onRowClick = async (member: Member): Promise<void> => {
+    this.rightSidebarService.open(this.memberDetailsPortal);
+    const requestId = ++this.memberRequestId;
+    this.isMemberLoading.set(true);
+    this.selectedMember.set(null);
+
+    try {
+      const detailed = await this.memberService.getMemberById(member.id);
+      if (requestId !== this.memberRequestId) return;
+      this.selectedMember.set(detailed);
+    } catch (error) {
+      if (requestId !== this.memberRequestId) return;
+      console.error('Failed to load member details', error);
+      this.toastService.error({ message: 'Could not load member details.' });
+      this.rightSidebarService.close();
+    } finally {
+      if (requestId === this.memberRequestId) {
+        this.isMemberLoading.set(false);
+      }
+    }
+  };
+
   private async loadMembers(page: number, pageSize: number, search?: string): Promise<void> {
     const requestId = ++this.requestId;
     this.isLoading.set(true);
@@ -140,43 +177,50 @@ export class Directory implements OnInit {
       return;
     }
 
-    switch (option.id) {
-      case 'enable':
-        await this.setMemberDisabled(member, false);
-        break;
-      case 'disable':
-        await this.setMemberDisabled(member, true);
-        break;
-      case 'delete':
-        await this.removeMember(member);
-        break;
-    }
+    const actionMap: Record<string, { title: string; message: string; action: () => Promise<void> }> = {
+      enable: {
+        title: 'Enable Member',
+        message: `Are you sure you want to enable ${member.fullname}?`,
+        action: () => this.setMemberDisabled(member, false),
+      },
+      disable: {
+        title: 'Disable Member',
+        message: `Are you sure you want to disable ${member.fullname}?`,
+        action: () => this.setMemberDisabled(member, true),
+      },
+      delete: {
+        title: 'Delete Member',
+        message: `Are you sure you want to delete ${member.fullname}? This action cannot be undone.`,
+        action: () => this.removeMember(member),
+      },
+    };
+
+    const config = actionMap[option.id];
+    if (!config) return;
+
+    this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: config.title,
+        message: config.message,
+        onConfirm: config.action,
+      } as ConfirmDialogData,
+    });
   }
 
   private async setMemberDisabled(member: Member, disabled: boolean): Promise<void> {
-    try {
-      await this.memberService.updateMember(member.id, { isDisabled: disabled ? 1 : 0 });
-      this.toastService.success({ message: `${member.fullname} ${disabled ? 'disabled' : 'enabled'}.` });
-      this.refreshMembers();
-    } catch (error) {
-      console.error('Failed to toggle member disabled state', error);
-      this.toastService.error({ message: `Could not ${disabled ? 'disable' : 'enable'} ${member.fullname}.` });
-    }
+    await this.memberService.updateMember(member.id, { isDisabled: disabled ? 1 : 0 });
+    this.toastService.success({ message: `${member.fullname} ${disabled ? 'disabled' : 'enabled'}.` });
+    this.refreshMembers();
   }
 
   private async removeMember(member: Member): Promise<void> {
-    try {
-      const result = await this.memberService.deleteMember(member.id);
-      if (result.success) {
-        this.toastService.success({ message: `${member.fullname} deleted.` });
-      } else {
-        this.toastService.error({ message: `${member.fullname} could not be deleted.` });
-      }
-      this.refreshMembers();
-    } catch (error) {
-      console.error('Failed to delete member', error);
-      this.toastService.error({ message: `Could not delete ${member.fullname}.` });
+    const result = await this.memberService.deleteMember(member.id);
+    if (result.success) {
+      this.toastService.success({ message: `${member.fullname} deleted.` });
+    } else {
+      this.toastService.error({ message: `${member.fullname} could not be deleted.` });
     }
+    this.refreshMembers();
   }
 
   private refreshMembers(): void {

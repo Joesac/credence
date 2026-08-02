@@ -7,7 +7,7 @@
     @if (selectedMember()) {
         <section class="my-4 flex flex-col gap-4 w-full">
             @if (selectedMember(); as member) {
-                <app-user-details [user]="member" />
+                <app-member-summary [user]="member" />
             }
         </section>
 
@@ -17,64 +17,67 @@
             mat-stretch-tabs="false" 
             mat-align-tabs="start">
             <mat-tab label="Deposits">
-                <app-data-table 
-                    [data]="depositRows()"
-                    [columns]="depositColumns"
-                    [loading]="isLoadingDeposits()"
-                    loadingMessage="Loading deposit history..."
-                    [emptyMessage]="depositEmptyMessage()"
-                    [(currentPage)]="depositPage"
-                    [(pageSize)]="depositPageSize"
-                    [totalRecords]="depositTotalRecords()"
-                >
-                    <ng-template appDataTableCell="isCancelled" let-row>
-                        @if (row.isCancelled) {
-                            <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
-                        } @else {
-                            <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
-                        }
-                    </ng-template>
-
-                    <ng-template appDataTableCell="action" let-row>
-                        @if (!row.isCancelled) {
-                            <app-actions-button
-                                [actions]="transactionActions"
-                                [isProcessing]="cancellingDepositId() === row.id"
-                                (onActionSelected)="handleTransactionAction($event, row)"
-                            />
-                        }
-                    </ng-template>
-                </app-data-table>
+                <div class="flex items-center justify-between mt-4">
+                    <app-data-table 
+                        [data]="depositRows()"
+                        [columns]="depositColumns"
+                        [loading]="isLoadingDeposits()"
+                        loadingMessage="Loading deposit history..."
+                        [emptyMessage]="depositEmptyMessage()"
+                        [(currentPage)]="depositPage"
+                        [(pageSize)]="depositPageSize"
+                        [totalRecords]="depositTotalRecords()"
+                    >
+                        <ng-template appDataTableCell="isCancelled" let-row>
+                            @if (row.isCancelled) {
+                                <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
+                            } @else {
+                                <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
+                            }
+                        </ng-template>
+    
+                        <ng-template appDataTableCell="action" let-row>
+                            @if (!row.isCancelled) {
+                                <app-actions-button
+                                    [actions]="transactionActions"
+                                    (onActionSelected)="handleTransactionAction($event, row)"
+                                />
+                            }
+                        </ng-template>
+                    </app-data-table>
+                </div>
             </mat-tab>
-            <mat-tab label="Withdrawals">
-                <app-data-table 
-                    [data]="withdrawalRows()"
-                    [columns]="transactionColumns"
-                    [loading]="isLoadingWithdrawals()"
-                    loadingMessage="Loading withdrawal history..."
-                    [emptyMessage]="withdrawalEmptyMessage()"
-                    [(currentPage)]="withdrawalPage"
-                    [(pageSize)]="withdrawalPageSize"
-                    [totalRecords]="withdrawalTotalRecords()"
-                >
-                    <ng-template appDataTableCell="isCancelled" let-row>
-                        @if (row.isCancelled) {
-                            <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
-                        } @else {
-                            <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
-                        }
-                    </ng-template>
 
-                    <ng-template appDataTableCell="action" let-row>
-                        @if (!row.isCancelled) {
-                            <app-actions-button
-                                [actions]="transactionActions"
-                                [isProcessing]="cancellingWithdrawalId() === row.id"
-                                (onActionSelected)="handleTransactionAction($event, row)"
-                            />
-                        }
-                    </ng-template>
-                </app-data-table>
+            <mat-tab label="Withdrawals">
+                <div class="flex items-center justify-between mt-4">
+                    <app-data-table 
+                        [data]="withdrawalRows()"
+                        [columns]="transactionColumns"
+                        [loading]="isLoadingWithdrawals()"
+                        loadingMessage="Loading withdrawal history..."
+                        [emptyMessage]="withdrawalEmptyMessage()"
+                        [(currentPage)]="withdrawalPage"
+                        [(pageSize)]="withdrawalPageSize"
+                        [totalRecords]="withdrawalTotalRecords()"
+                    >
+                        <ng-template appDataTableCell="isCancelled" let-row>
+                            @if (row.isCancelled) {
+                                <div class="bg-rose-500/10 text-rose-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Cancelled</div>
+                            } @else {
+                                <div class="bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-semibold px-4 py-1.5 text-center flex-auto">Open</div>
+                            }
+                        </ng-template>
+
+                        <ng-template appDataTableCell="action" let-row>
+                            @if (!row.isCancelled) {
+                                <app-actions-button
+                                    [actions]="transactionActions"
+                                    (onActionSelected)="handleTransactionAction($event, row)"
+                                />
+                            }
+                        </ng-template>
+                    </app-data-table>
+                </div>
             </mat-tab>
         </mat-tab-group>
     } @else {

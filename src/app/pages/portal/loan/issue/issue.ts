@@ -4,11 +4,12 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
-import { UserDetails } from '../../members/components/user-details/user-details';
+import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
 import { UtilsService } from '@shared/services/utils-service';
+import { DisableCoverComponent } from '@shared/components/disable-cover-component/disable-cover-component';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { AuthService } from '../../../auth/services/auth-service';
 import { LoanService } from '../service/loan-service';
@@ -27,11 +28,12 @@ interface LoanIssueData {
   imports: [
     Dropdown, 
     MemberSelectionDropdown, 
-    UserDetails, 
+    MemberSummary, 
     FormField, 
     Inputfield,
     MatDatepickerModule,
-    MatInputModule
+    MatInputModule,
+    DisableCoverComponent
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './issue.html',
@@ -44,7 +46,7 @@ export class Issue {
   private readonly loanService = inject(LoanService);
   private readonly utilsService = inject(UtilsService);
 
-  private readonly userDetailsComponent = viewChild(UserDetails);
+  private readonly memberSummaryComponent = viewChild(MemberSummary);
 
   protected readonly REPAYMENT_FREQUENCIES = [
     { label: 'Weekly', value: 'weekly' },
@@ -136,7 +138,7 @@ export class Issue {
       await this.loanService.addLoan(payload);
       this.toastService.success({ message: 'Loan issued successfully.' });
       this.resetForm();
-      this.userDetailsComponent()?.refreshFinancialSummary();
+      this.memberSummaryComponent()?.refreshFinancialSummary();
     } catch (error) {
       const ipcError = this.loanService.extractIpcError(error);
       const message = (ipcError.message as string) || 'Unable to issue loan. Please try again.';

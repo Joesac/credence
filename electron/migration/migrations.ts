@@ -3,7 +3,7 @@ import { addColumnIfMissing, createUniqueIndexIfMissing } from './utils';
 import { Migration } from './types';
 
 const migrateWithdrawalsColumns: Migration = {
-  id: '20240719_add_withdrawal_columns',
+  id: '20260719_add_withdrawal_columns',
   description: 'Ensure withdrawals table has is_cancelled and date_updated columns',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'withdrawals', 'is_cancelled', "is_cancelled INTEGER NOT NULL DEFAULT 0");
@@ -17,7 +17,7 @@ const migrateWithdrawalsColumns: Migration = {
 };
 
 const addTransactionIdColumns: Migration = {
-  id: '20240720_add_transaction_ids',
+  id: '20260720_add_transaction_ids',
   description: 'Add transaction_id columns to deposits and withdrawals',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'deposits', 'transaction_id', 'transaction_id TEXT');
@@ -29,7 +29,7 @@ const addTransactionIdColumns: Migration = {
 };
 
 const addLoanCancellationColumn: Migration = {
-  id: '20240721_add_loan_cancellation_column',
+  id: '20260721_add_loan_cancellation_column',
   description: 'Add is_cancelled column to loans table',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'loans', 'is_cancelled', "is_cancelled INTEGER NOT NULL DEFAULT 0");
@@ -37,7 +37,7 @@ const addLoanCancellationColumn: Migration = {
 };
 
 const updateLoanRepaymentsSchema: Migration = {
-  id: '20240721_update_loan_repayments_schema',
+  id: '20260721_update_loan_repayments_schema',
   description: 'Replace member_id with loan_id reference in loan repayments',
   run: (db: Database.Database) => {
     const columns = db.prepare("PRAGMA table_info('loan_repayments')").all() as { name: string }[];
@@ -72,7 +72,7 @@ const updateLoanRepaymentsSchema: Migration = {
 };
 
 const addLoanRepaymentCancellationColumn: Migration = {
-  id: '20240722_add_loan_repayment_cancellation_column',
+  id: '20260722_add_loan_repayment_cancellation_column',
   description: 'Add is_cancelled column to loan_repayments table',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'loan_repayments', 'is_cancelled', 'is_cancelled INTEGER NOT NULL DEFAULT 0');
@@ -80,7 +80,7 @@ const addLoanRepaymentCancellationColumn: Migration = {
 };
 
 const addDepositRefreshmentTokenColumn: Migration = {
-  id: '20240725_add_deposit_refreshment_token_column',
+  id: '20260725_add_deposit_refreshment_token_column',
   description: 'Add refreshment_token column to deposits table',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'deposits', 'refreshment_token', 'refreshment_token INTEGER NOT NULL DEFAULT 0');
@@ -88,7 +88,7 @@ const addDepositRefreshmentTokenColumn: Migration = {
 };
 
 const addMemberIsDisabledColumn: Migration = {
-  id: '20240726_add_member_is_disabled_column',
+  id: '20260726_add_member_is_disabled_column',
   description: 'Add is_disabled column to members table',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'members', 'is_disabled', 'is_disabled INTEGER NOT NULL DEFAULT 0');
@@ -96,7 +96,7 @@ const addMemberIsDisabledColumn: Migration = {
 };
 
 const addUsersUsernameColumn: Migration = {
-  id: '20240726_add_users_username_column',
+  id: '20260726_add_users_username_column',
   description: 'Add username column to users table for legacy databases',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'users', 'username', "username TEXT NOT NULL DEFAULT ''");
@@ -104,7 +104,7 @@ const addUsersUsernameColumn: Migration = {
 };
 
 const addUsersStatusAndLoginColumns: Migration = {
-  id: '20240726_add_users_status_and_login_columns',
+  id: '20260726_add_users_status_and_login_columns',
   description: 'Add is_disabled and last_login columns to users table',
   run: (db: Database.Database) => {
     addColumnIfMissing(db, 'users', 'is_disabled', 'is_disabled INTEGER NOT NULL DEFAULT 0');
@@ -113,10 +113,25 @@ const addUsersStatusAndLoginColumns: Migration = {
 };
 
 const makeUsersUsernameUnique: Migration = {
-  id: '20240727_make_users_username_unique',
+  id: '20260727_make_users_username_unique',
   description: 'Add unique index to username column in users table',
   run: (db: Database.Database) => {
     createUniqueIndexIfMissing(db, 'users', 'uniq_users_username', '(username)');
+  },
+};
+
+const addLoanDateUpdatedColumn: Migration = {
+  id: '20260801_add_loan_date_updated_column',
+  description: 'Add date_updated column to loans table and backfill from date_created',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(
+      db,
+      'loans',
+      'date_updated',
+      "date_updated TEXT NOT NULL DEFAULT (datetime('now'))"
+    );
+    // Backfill existing rows: set date_updated to date_created
+    db.exec("UPDATE loans SET date_updated = date_created WHERE date_updated IS NULL OR date_updated = ''");
   },
 };
 
@@ -131,4 +146,5 @@ export const MIGRATIONS: Migration[] = [
   addUsersUsernameColumn,
   addUsersStatusAndLoginColumns,
   makeUsersUsernameUnique,
+  addLoanDateUpdatedColumn,
 ];

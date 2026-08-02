@@ -33,7 +33,7 @@ export class Register {
   protected readonly dropdownItems = <{ label: string; value: string }[]>([
     { label: "Tanoso", value: "tanoso" },
     { label: "Apatrapa", value: "apatrapa" },
-    { label: "Bokanky", value: "bokankye" },
+    { label: "Bokankye", value: "bokankye" },
     { label: "Nyenkyerenyase", value: "nyenkyerenyase" },
     { label: "Bokankye Sene", value: "bokankye sene" },
     { label: "Amakom", value: "amakom" },

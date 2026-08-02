@@ -2,7 +2,7 @@
  
 @if (label()) {
     <label 
-        class="font-medium text-text-main"
+        class="font-medium mb-1 text-text-main"
     >
         <span [class.!text-rose-600]="isError">{{ label() }}</span> 
         <span class="text-rose-600">{{ (errors() | json)?.length > 0 ? ' *' : '' }}</span>
@@ -25,7 +25,7 @@
 </div>
 
 @if (touched()) {
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2 mt-1">
         @for (error of errors(); track error) {
             <span class="text-rose-600 text-sm tex">{{ error?.message }}</span>
         }

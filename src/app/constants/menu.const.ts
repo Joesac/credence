@@ -40,7 +40,7 @@ export const MENU: Menu[] = [
     isActive: false,
     children: [
       { id: 'daily', label: 'Daily Collections', isActive: false },
-      { id: 'monthly', label: 'Monthly Summaries', isActive: false }
+      // { id: 'monthly', label: 'Monthly Summaries', isActive: false }
     ]
   },
   {

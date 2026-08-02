@@ -12,6 +12,7 @@
           [(currentPage)]="currentPage"
           [(pageSize)]="pageSize"
           [totalRecords]="totalRecords()"
+          [onRowClick]="onRowClick"
         >
           <ng-template appDataTableCell="action" let-member>
             <app-actions-button
@@ -22,3 +23,35 @@
         </app-data-table>
     </div>
 </section>
+
+<ng-template cdkPortal #memberDetailsPortal="cdkPortal">
+    <div class="flex flex-col h-full">
+        <div class="p-6 border-b border-border-base flex items-center justify-between">
+            <div>
+                <h3 class="text-xl font-semibold text-text-main">Member Details</h3>
+                <p class="text-sm text-text-muted mt-0.5">Full member profile &amp; financial summary</p>
+            </div>
+            <button
+                mat-icon-button
+                (click)="rightSidebarService.close()"
+                class="text-text-muted hover:text-text-main transition-colors"
+            >
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            @if (isMemberLoading()) {
+                <div class="flex items-center justify-center py-12">
+                    <span class="text-sm text-text-muted">Loading member details...</span>
+                </div>
+            } @else if (selectedMember()) {
+                <app-member-details [member]="selectedMember()!" />
+            } @else {
+                <div class="flex items-center justify-center py-12">
+                    <span class="text-sm text-text-muted">No member data available.</span>
+                </div>
+            }
+        </div>
+    </div>
+</ng-template>
