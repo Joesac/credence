@@ -12,7 +12,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "package": "tsc -p tsconfig.electron.json && electron-forge package",
-    "make": "tsc -p tsconfig.electron.json && electron-forge make",
+    "make": "ng build && tsc -p tsconfig.electron.json && electron-forge make",
     "compile-electron:watch": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
     "serve-electron": "electron dist-electron/main.js",
     "dev:electron": "concurrently -k \"npm:compile-electron:watch\" \"nodemon\""
