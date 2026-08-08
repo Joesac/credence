@@ -55,23 +55,29 @@
                         [formField]="loginForm.password"
                         label="Password"
                         placeholder="Enter your password"
-                        type="password"
+                        [type]="showPassword() ? 'text' : 'password'"
+                        [icon]="showPassword() ? 'visibility_off' : 'visibility'"
+                        (iconClick)="showPassword.set(!showPassword())"
                     />
                 </div>
 
                 <div class="pt-2">
                     <button
                         type="submit"
-                        class="btn-primary w-full h-12 text-base flex items-center justify-center gap-2"
+                        matButton="filled"
+                        color="primary"
+                        class="w-full h-12 text-base gap-2"
                         [disabled]="loginForm().invalid()"
                     >
-                        <span>Sign in</span>
-                        <span class="material-symbols-outlined text-xl">login</span>
+                        <div class="flex items-center justify-center gap-2">
+                            <span>Sign in</span>
+                            <span class="material-symbols-outlined text-xl">login</span>
+                        </div>
                     </button>
                 </div>
 
                 <p class="text-center text-xs text-text-muted mt-8">
-                    &copy; {{ now.getFullYear() }} Credence. All rights reserved.
+                    <span class="text-brand-primary">&copy; 2026 Effervetech Company Ltd</span> · <span class="text-brand-primary">v{{ version() }}</span>
                 </p>
             </form>
         </div>

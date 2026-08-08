@@ -28,6 +28,8 @@ export class Inputfield implements FormValueControl<string | number | null> {
   readonly disabled = input<boolean>(false);
   readonly type = input<'text' | 'textarea' | 'password'>('text');
   readonly inputMode = input<'text' | 'numeric' | 'decimal'>('text');
+  readonly icon = input<string | null>(null);
+  readonly iconClick = output<void>();
 
   protected onKeydown(event: KeyboardEvent) {
     const mode = this.inputMode();

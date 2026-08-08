@@ -1,5 +1,9 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '../../../../interfaces/member.interface';
@@ -12,6 +16,7 @@ import { DepositService } from './service/deposit-service';
 import { DepositPaymentMethod } from '@interfaces/deposit.interface';
 
 interface DepositData {
+  date: Date;
   paymentMethod: string;
   amount: number | null;
   refreshmentToken: number | null;
@@ -26,8 +31,12 @@ interface DepositData {
     MemberSummary, 
     Inputfield, 
     MemberSelectionDropdown, 
-    DisableCoverComponent
+    DisableCoverComponent,
+    MatDatepickerModule,
+    MatInputModule,
+    MatButtonModule
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './deposit.html',
   styleUrl: './deposit.scss',
   host: { 'class': 'w-full flex justify-center' }
@@ -47,7 +56,10 @@ export class Deposit {
     { label: "Mobile Money", value: "momo"  }
   ];
 
+  protected readonly maxDate: Date = new Date();
+
   private INITIAL_DATA = <DepositData>({
+    date: new Date(),
     paymentMethod: '',
     amount: null,
     refreshmentToken: null,
@@ -55,6 +67,10 @@ export class Deposit {
   })
   protected readonly depositModel = signal<DepositData>(this.INITIAL_DATA);
   protected depositForm = form(this.depositModel, (path) => {
+    required(path.date, {
+      message: 'Date is required'
+    });
+
     required(path.paymentMethod, {
       message: 'Payment Method is required'
     });
@@ -99,7 +115,7 @@ export class Deposit {
       return;
     }
 
-    const { paymentMethod, amount, refreshmentToken, notes } = this.depositForm().value();
+    const { date, paymentMethod, amount, refreshmentToken, notes } = this.depositForm().value();
     const payload = {
       memberId: member.id,
       receivedBy,
@@ -107,6 +123,7 @@ export class Deposit {
       amount: Number(amount),
       refreshmentToken: Number(refreshmentToken),
       notes: notes?.trim() ? notes.trim() : null,
+      date: (date as Date).toLocaleDateString('en-CA'),
     };
 
     this.isSubmitting.set(true);

@@ -34,7 +34,8 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()" [disabled]="isSubmitting()">Cancel</button>
   <button 
-    class="btn-primary" 
+    matButton="filled"
+    color="primary"
     (click)="onSubmit($event)" 
     [disabled]="addUserForm().invalid() || isSubmitting()"
   >

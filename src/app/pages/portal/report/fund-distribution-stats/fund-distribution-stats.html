@@ -1,0 +1,118 @@
+<section class="w-full flex flex-col gap-6 p-6 max-width">
+    @if (globalStats()) {
+        <div class="card flex flex-col gap-4">
+            <h2 class="text-lg font-semibold text-text-main">Global Contributions</h2>
+            <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                    <p class="text-sm uppercase tracking-wide text-text-muted">Total Deposits</p>
+                    <div class="mt-2 text-2xl font-semibold text-text-main">
+                        {{ globalStats()!.totalDeposits | number:'1.2-2' }}
+                    </div>
+                    <p class="text-xs text-text-muted mt-1">All contributions deposited by members.</p>
+                </div>
+
+                <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                    <p class="text-sm uppercase tracking-wide text-text-muted">Total Withdrawals</p>
+                    <div class="mt-2 text-2xl font-semibold text-text-main">
+                        {{ globalStats()!.totalWithdrawals | number:'1.2-2' }}
+                    </div>
+                    <p class="text-xs text-text-muted mt-1">All withdrawals made by members.</p>
+                </div>
+
+                <div class="rounded-2xl border border-border-base bg-brand-primary/5 p-5">
+                    <p class="text-sm uppercase tracking-wide text-text-muted">Net Contributions</p>
+                    <div class="mt-2 text-2xl font-semibold text-brand-primary">
+                        {{ globalStats()!.netContributions | number:'1.2-2' }}
+                    </div>
+                    <p class="text-xs text-text-muted mt-1">Deposits minus withdrawals (pool available).</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card flex flex-col gap-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <app-member-selection-dropdown
+                class="w-full sm:w-80"
+                (onSelectMember)="onSelectMember($event)" />
+
+            <button
+                matButton="filled"
+                color="primary"
+                [disabled]="!selectedMember() || !memberStats() || memberStats()!.hasReceived || isLoadingMemberStats() || isSubmitting()"
+                (click)="onReceiveMoney()">
+                Receive Money
+            </button>
+        </div>
+    </div>
+
+    @if (selectedMember()) {
+        <div class="card flex flex-col gap-6">
+            @if (selectedMember() && isLoadingMemberStats()) {
+                <div class="text-center py-8 text-text-muted">Loading member stats...</div>
+            }
+    
+            @if (selectedMember() && memberStats() && !isLoadingMemberStats()) {
+                @let stats = memberStats()!;
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-semibold text-text-main">{{ selectedMember()!.fullname }}</h2>
+                        @if (stats.hasReceived) {
+                            <span class="text-emerald-600 font-medium">Received</span>
+                        }
+                    </div>
+    
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Total Deposits</p>
+                            <div class="mt-2 text-2xl font-semibold text-text-main">
+                                {{ stats.totalDeposits | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Total contributions this member has deposited.</p>
+                        </div>
+    
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Total Withdrawals</p>
+                            <div class="mt-2 text-2xl font-semibold text-text-main">
+                                {{ stats.totalWithdrawals | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Total withdrawals this member has made.</p>
+                        </div>
+    
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Total Loan Amount</p>
+                            <div class="mt-2 text-2xl font-semibold text-text-main">
+                                {{ stats.totalLoanAmount | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Total outstanding loan value including interest.</p>
+                        </div>
+    
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Total Repayments</p>
+                            <div class="mt-2 text-2xl font-semibold text-text-main">
+                                {{ stats.totalRepayments | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Amount this member has repaid toward loans.</p>
+                        </div>
+    
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Amount Remaining</p>
+                            <div class="mt-2 text-2xl font-semibold text-text-main">
+                                {{ (stats.totalLoanAmount - stats.totalRepayments) | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Outstanding loan balance yet to be repaid.</p>
+                        </div>
+    
+                        <div class="rounded-2xl border border-border-base bg-surface-hover p-5">
+                            <p class="text-sm uppercase tracking-wide text-text-muted">Amount to Receive</p>
+                            <div class="mt-2 text-2xl font-semibold text-brand-primary">
+                                {{ stats.amountToReceive | number:'1.2-2' }}
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">Deposits less withdrawals and outstanding loans.</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>

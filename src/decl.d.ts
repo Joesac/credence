@@ -24,6 +24,7 @@ import {
   PaginatedLoanRepayments,
 } from '@interfaces/loan.interface';
 import { DashboardData, DailySummary } from '@interfaces/dashboard.interface';
+import { FundDistributionSummary, GlobalFundDistributionStats, CreateFundDistributionPayload } from '@interfaces/fund-distribution.interface';
 
 export interface ElectronAPI {
   getDashboardData: () => Promise<DashboardData>;
@@ -59,6 +60,10 @@ export interface ElectronAPI {
   addLoanRepayment: (payload: LoanRepaymentPayload) => Promise<LoanRepayment | null>;
   updateLoanRepayment: (payload: { id: string; amount?: number; notes?: string | null; isCancelled?: boolean }) => Promise<LoanRepayment | null>;
   deleteLoanRepayment: (payload: { id: string }) => Promise<{ success: boolean }>;
+  getFundDistributionStats: (payload: { memberId: string }) => Promise<FundDistributionSummary>;
+  getGlobalFundDistributionStats: () => Promise<GlobalFundDistributionStats>;
+  createFundDistribution: (payload: CreateFundDistributionPayload) => Promise<{ success: boolean }>;
+  getVersion: () => Promise<string>;
 }
 
 declare global {

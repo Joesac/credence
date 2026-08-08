@@ -1,5 +1,6 @@
-import { Component, effect, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from "@shared/components/data-table/directive/data-table-cell-directive";
 import { Inputfield } from '@shared/components/inputfield/inputfield';
@@ -17,7 +18,8 @@ import { AddUserDialogComponent } from '../add-user-dialog/add-user-dialog';
     DataTableCellDirective,
     Inputfield,
     ActionsButtonComponent,
-    MatDialogModule
+    MatDialogModule,
+    MatButtonModule
   ],
   templateUrl: './users-list-component.html',
   styleUrl: './users-list-component.scss',

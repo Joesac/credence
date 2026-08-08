@@ -142,3 +142,7 @@ export const IPC_CHANNEL_DELETE_LOAN_REPAYMENT = 'delete-loan-repayment';
 export const IPC_CHANNEL_GET_DASHBOARD_DATA = 'get-dashboard-data';
 export const IPC_CHANNEL_GET_DAILY_SUMMARY = 'get-daily-summary';
 export const IPC_CHANNEL_TOGGLE_USER_STATUS = 'toggle-user-status';
+export const IPC_CHANNEL_CREATE_FUND_DISTRIBUTION = 'create-fund-distribution';
+export const IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS = 'get-fund-distribution-stats';
+export const IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS = 'get-global-fund-distribution-stats';
+export const IPC_CHANNEL_GET_VERSION = 'get-version';

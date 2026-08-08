@@ -35,6 +35,10 @@ import {
   IPC_CHANNEL_GET_DASHBOARD_DATA,
   IPC_CHANNEL_GET_DAILY_SUMMARY,
   IPC_CHANNEL_TOGGLE_USER_STATUS,
+  IPC_CHANNEL_CREATE_FUND_DISTRIBUTION,
+  IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS,
+  IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS,
+  IPC_CHANNEL_GET_VERSION,
 } from './constants';
 
 contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
@@ -103,4 +107,19 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
     ipcRenderer.invoke(IPC_CHANNEL_UPDATE_LOAN_REPAYMENT, payload),
   deleteLoanRepayment: (payload: { id: string }) =>
     ipcRenderer.invoke(IPC_CHANNEL_DELETE_LOAN_REPAYMENT, payload),
+  
+    /**
+   * Fund Distribution bridge
+   */
+  createFundDistribution: (payload: { memberId: string; giverId: string; amount: number; notes?: string | null; dateReceived?: string }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_CREATE_FUND_DISTRIBUTION, payload),
+  getFundDistributionStats: (payload: { memberId: string }) =>
+    ipcRenderer.invoke(IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS, payload),
+  getGlobalFundDistributionStats: () =>
+    ipcRenderer.invoke(IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS),
+
+  /**
+   * App info bridge
+   */
+  getVersion: () => ipcRenderer.invoke(IPC_CHANNEL_GET_VERSION),
 });

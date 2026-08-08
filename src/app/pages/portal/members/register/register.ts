@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { form, FormField, required, readonly } from '@angular/forms/signals';
+import { form, FormField, required, pattern } from '@angular/forms/signals';
+import { MatButtonModule } from '@angular/material/button';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
 import { MemberService } from '../service/member-service';
@@ -19,7 +20,8 @@ interface RegisterData {
   imports: [
     FormField,
     Inputfield,
-    Dropdown
+    Dropdown,
+    MatButtonModule
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss',
@@ -55,6 +57,10 @@ export class Register {
 
     required(path.phoneNumber, {
       message: 'Phone number is required.'
+    });
+
+    pattern(path.phoneNumber, /^(0\d{9}|\+233\d{9}|233\d{9})$/, {
+      message: 'Phone number must be 0XXXXXXXXX, +233XXXXXXXXX or 233XXXXXXXXX.'
     });
 
     required(path.location, {

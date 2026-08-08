@@ -21,6 +21,7 @@ import {
 } from '../types';
 import { WITHDRAWAL_BASE_COLUMNS } from '../constants';
 import { createIpcError } from '../errors';
+import { buildTransactionTimestamp } from './utils';
 
 function prefixColumns(columns: string, alias: string): string {
   return columns.trim().split(',').map(c => `${alias}.${c.trim()}`).join(', ');
@@ -77,9 +78,10 @@ function sanitizeDeposit(row: DbDepositRow): SanitizedDeposit {
 export function createDeposit(db: Database.Database, payload: CreateDepositPayload) {
   const id = randomUUID();
   const transactionId = generateTransactionId(db, 'deposits', 'DEP');
+  const timestamp = buildTransactionTimestamp(payload.date);
   const stmt = db.prepare(`
-    INSERT INTO deposits (id, transaction_id, member_id, received_by, payment_method, amount, refreshment_token, notes)
-    VALUES (@id, @transaction_id, @member_id, @received_by, @payment_method, @amount, @refreshment_token, @notes)
+    INSERT INTO deposits (id, transaction_id, member_id, received_by, payment_method, amount, refreshment_token, notes, date_created, date_updated)
+    VALUES (@id, @transaction_id, @member_id, @received_by, @payment_method, @amount, @refreshment_token, @notes, @date_created, @date_updated)
   `);
 
   stmt.run({
@@ -91,6 +93,8 @@ export function createDeposit(db: Database.Database, payload: CreateDepositPaylo
     amount: payload.amount,
     refreshment_token: payload.refreshmentToken,
     notes: payload.notes ?? null,
+    date_created: timestamp,
+    date_updated: timestamp,
   });
 
   return fetchDepositById(db, id);
@@ -308,6 +312,7 @@ export function createWithdrawal(db: Database.Database, payload: CreateWithdrawa
 
   const id = randomUUID();
   const transactionId = generateTransactionId(db, 'withdrawals', 'WDR');
+  const timestamp = buildTransactionTimestamp(payload.date);
   const stmt = db.prepare<{
     id: string;
     transaction_id: string;
@@ -315,9 +320,11 @@ export function createWithdrawal(db: Database.Database, payload: CreateWithdrawa
     issuer_id: string;
     amount: number;
     notes: string | null;
+    date_created: string;
+    date_updated: string;
   }>(`
-    INSERT INTO withdrawals (id, transaction_id, member_id, issuer_id, amount, notes)
-    VALUES (@id, @transaction_id, @member_id, @issuer_id, @amount, @notes)
+    INSERT INTO withdrawals (id, transaction_id, member_id, issuer_id, amount, notes, date_created, date_updated)
+    VALUES (@id, @transaction_id, @member_id, @issuer_id, @amount, @notes, @date_created, @date_updated)
   `);
 
   stmt.run({
@@ -327,6 +334,8 @@ export function createWithdrawal(db: Database.Database, payload: CreateWithdrawa
     issuer_id: payload.issuerId,
     amount: payload.amount,
     notes: payload.notes ?? null,
+    date_created: timestamp,
+    date_updated: timestamp,
   });
 
   return fetchWithdrawalById(db, id);

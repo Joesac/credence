@@ -1,8 +1,18 @@
 <mat-sidenav-container class="flex h-screen w-screen">
-  <mat-sidenav mode="side" opened class="p-4">
-    <h1 class="text-xl font-semibold text-text-main">Credence</h1>
+  <mat-sidenav mode="side" [opened]="app.isSidebarOpen()" class="h-full p-4">
+    <div class="h-full flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-semibold text-text-main">Credence</h1>
+        <button
+          type="button"
+          class="bg-transparent border-0 p-1 -mr-2 text-text-muted hover:text-text-main transition-colors cursor-pointer"
+          (click)="app.toggleSidebar()"
+        >
+          <span class="material-symbols-outlined text-xl">chevron_left</span>
+        </button>
+      </div>
 
-    <nav class="flex flex-col gap-1 mt-4">
+    <nav class="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto min-h-0">
       @for (item of menu; track item.id) {
         @let isOpen = isSubmenuOpen(item);
         <div class="flex flex-col">
@@ -72,10 +82,18 @@
         </div>
       }
     </nav>
+
+    <div class="text-xs text-text-muted pt-4">
+      <span class="text-brand-primary">&copy; 2026 Effervetech Company Ltd</span> · <span class="text-brand-primary">v{{ version() }}</span>
+    </div>
+    </div>
   </mat-sidenav>
+
   <mat-sidenav-content class="h-screen pb-4">
     <app-topbar />
-    <router-outlet />
+    <div class="w-full max-w-[1660px] mx-auto">
+      <router-outlet />
+    </div>
   </mat-sidenav-content>
 
   <mat-sidenav

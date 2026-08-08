@@ -41,6 +41,7 @@ export const MENU: Menu[] = [
     children: [
       { id: 'daily', label: 'Daily Collections', isActive: false },
       // { id: 'monthly', label: 'Monthly Summaries', isActive: false }
+      { id: 'fund-distribution', label: 'Fund Distribution', isActive: false }
     ]
   },
   {

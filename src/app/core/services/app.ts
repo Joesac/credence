@@ -2,12 +2,16 @@ import { Service, inject, signal } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs/operators';
+import { IpcBridgeService } from './ipc-bridge-service';
 
 @Service()
 export class AppService {
   private readonly router = inject(Router);
+  private readonly ipcBridge = inject(IpcBridgeService);
 
   readonly pageRoute = signal<string[]>([]);
+  readonly version = signal('');
+  readonly isSidebarOpen = signal(true);
 
   constructor() {
     this.router.events
@@ -18,6 +22,14 @@ export class AppService {
       .subscribe(() => this.updatePageRoute());
 
     this.updatePageRoute();
+
+    this.ipcBridge
+      .executeIPC((api) => api.getVersion())
+      .then((version) => this.version.set(version));
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen.update((open) => !open);
   }
 
   private updatePageRoute(): void {

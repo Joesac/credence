@@ -9,6 +9,7 @@ import { PortalModule } from '@angular/cdk/portal';
 import { RightSidebarService } from '@core/services/right-sidebar-service';
 import { IdleService } from '@core/services/idle-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
+import { AppService } from '@core/services/app';
 import { AuthService } from '../auth/services/auth-service';
 import { LOGIN_ROUTE } from '@constants/routes.const';
 import { Subscription } from 'rxjs';
@@ -26,11 +27,13 @@ export class Portal implements OnInit, OnDestroy {
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   protected readonly rightSidebarService = inject(RightSidebarService);
+  protected readonly app = inject(AppService);
   protected readonly expandedSections = signal<Record<string, boolean>>({});
   protected readonly menu = MENU;
 
   protected readonly showSessionWarning = signal(false);
   protected readonly sessionRemainingSeconds = signal(0);
+  protected readonly version = this.app.version;
 
   private warningSub?: Subscription;
 
@@ -43,6 +46,7 @@ export class Portal implements OnInit, OnDestroy {
       this.sessionRemainingSeconds.set(secondsRemaining);
       this.showSessionWarning.set(true);
     });
+
   }
 
   protected continueSession(): void {

@@ -84,6 +84,11 @@ export const routes: Routes = [
           path: 'monthly', 
           loadComponent: () => import('./pages/portal/report/monthly/monthly').then(m => m.Monthly),
           data: { breadcrumb: ['Monthly Summaries'] }
+        },
+        { 
+          path: 'fund-distribution', 
+          loadComponent: () => import('./pages/portal/report/fund-distribution-stats/fund-distribution-stats').then(m => m.FundDistributionStats),
+          data: { breadcrumb: ['Fund Distribution'] }
         }
       ]
     },

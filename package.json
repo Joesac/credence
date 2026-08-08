@@ -1,6 +1,6 @@
 {
   "name": "credence",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "dist-electron/main.js",
   "author": "Effervetech Company Ltd",
   "description": "This app is used to manage finances",
@@ -35,8 +35,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "ng-apexcharts": "^2.4.0",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
-    "xlsx": "^0.18.5"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular/build": "^22.0.5",

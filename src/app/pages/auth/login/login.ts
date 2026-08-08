@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { ButtonThemeSwitchter } from '@core/components/button-theme-switchter/button-theme-switchter';
 import { ToastService } from '@core/components/toast/service/toast-service';
+import { AppService } from '@core/services/app';
 import { PORTAL_DASHBOARD_ROUTE } from '@constants/routes.const';
 import { AuthService } from '../services/auth-service';
 
@@ -28,6 +29,7 @@ export class Login {
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  protected readonly app = inject(AppService);
   private readonly INITIAL_DATA = <LoginData>({
     username: '',
     password: '',
@@ -44,7 +46,9 @@ export class Login {
     });
   });
 
-  protected readonly now = new Date();
+  protected readonly showPassword = signal(false);
+
+  protected readonly version = this.app.version;
 
   /**
    * Submits validated credentials to the authentication service.

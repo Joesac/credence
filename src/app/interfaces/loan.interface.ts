@@ -10,6 +10,7 @@ export interface LoanPayload {
   repaymentFrequency: LoanRepaymentFrequency;
   dueDate: string;
   notes?: string | null;
+  date: string;
 }
 
 export interface LoanUpdatePayload extends Partial<LoanPayload> {
@@ -58,6 +59,7 @@ export interface LoanRepaymentPayload {
   receiverId: string;
   amount: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface LoanRepaymentRelation {

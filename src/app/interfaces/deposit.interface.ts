@@ -9,6 +9,7 @@ export interface DepositPayload {
   amount: number;
   refreshmentToken: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface DepositUpdatePayload extends Partial<DepositPayload> {

@@ -25,26 +25,30 @@
 
       <hr class="border-border-base my-6" />
 
-      <app-inputfield
-        [formField]="detailsForm.currentPassword"
-        label="Current Password"
-        type="password"
-        placeholder="Enter your current password to verify"
-        hint="Required to apply any changes."
-      />
+      <div class="flex flex-col gap-12">
+        <app-inputfield
+          [formField]="detailsForm.currentPassword"
+          label="Current Password"
+          type="password"
+          placeholder="Enter your current password to verify"
+          hint="Required to apply any changes."
+        />
 
-      <app-inputfield
-        [formField]="detailsForm.password"
-        label="New Password"
-        type="password"
-        placeholder="Enter new password (leave blank to keep current)"
-        hint="Only fill this if you want to change your password."
-      />
+        <app-inputfield
+          [formField]="detailsForm.password"
+          label="New Password"
+          type="password"
+          placeholder="Enter new password (leave blank to keep current)"
+          hint="Only fill this if you want to change your password."
+        />
+      </div>
 
       <div class="flex justify-end pt-4">
         <button
           type="submit"
-          class="btn-primary px-8"
+          matButton="filled"
+          color="primary"
+          class="px-8"
           [disabled]="detailsForm().invalid() || isSubmitting()"
         >
           {{ isSubmitting() ? 'Saving…' : 'Save Changes' }}

@@ -1,7 +1,8 @@
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { form, required, FormField, min } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
@@ -16,6 +17,7 @@ import { LoanService } from '../service/loan-service';
 import { LoanPayload } from '@interfaces/loan.interface';
 
 interface LoanIssueData {
+  issueDate: Date;
   amount: number | null;
   interestRate: number | null;
   repaymentFrequency: string;
@@ -33,6 +35,7 @@ interface LoanIssueData {
     Inputfield,
     MatDatepickerModule,
     MatInputModule,
+    MatButtonModule,
     DisableCoverComponent
   ],
   providers: [provideNativeDateAdapter()],
@@ -56,10 +59,14 @@ export class Issue {
   protected readonly selectedMember = signal<Member | null>(null);
   protected readonly isSubmitting = signal(false);
 
-  // Disable all dates before this date in the date picker which is today
-  protected minDate: Date = new Date();
+  // Due date must be at least one day after the selected issue date
+  protected readonly minDate = computed(() => this.addOneDay(this.loanIssueModel().issueDate));
+
+  // Prevent issue date from being in the future
+  protected maxDate: Date = new Date();
 
   private readonly INITIAL_DATA: LoanIssueData = {
+    issueDate: new Date(),
     amount: null,
     interestRate: null,
     repaymentFrequency: 'weekly',
@@ -69,6 +76,10 @@ export class Issue {
 
   protected readonly loanIssueModel = signal<LoanIssueData>(this.INITIAL_DATA);
   protected loanIssueForm = form(this.loanIssueModel, (path) => {
+    required(path.issueDate, {
+      message: 'Issue date is required'
+    });
+
     required(path.amount, {
       message: 'Amount is required'
     });
@@ -115,7 +126,7 @@ export class Issue {
       return;
     }
 
-    const { amount, interestRate, repaymentFrequency, dueDate, notes } = this.loanIssueForm().value();
+    const { issueDate, amount, interestRate, repaymentFrequency, dueDate, notes } = this.loanIssueForm().value();
     const normalizedDueDate = this.utilsService.normalizeDueDate(dueDate);
     
     if (!normalizedDueDate) {
@@ -131,6 +142,7 @@ export class Issue {
       repaymentFrequency,
       dueDate: normalizedDueDate,
       notes: notes?.trim() ? notes.trim() : null,
+      date: (issueDate as Date).toLocaleDateString('en-CA'),
     };
 
     this.isSubmitting.set(true);
@@ -155,5 +167,11 @@ export class Issue {
 
   private resetForm() {
     this.loanIssueForm().reset({ ...this.INITIAL_DATA });
+  }
+
+  private addOneDay(date: Date): Date {
+    const next = new Date(date);
+    next.setDate(next.getDate() + 1);
+    return next;
   }
 }

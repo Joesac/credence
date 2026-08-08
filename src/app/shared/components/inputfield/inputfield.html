@@ -24,7 +24,7 @@
             (blur)="touch.emit()"
             ></textarea>
     } @else {
-        <mat-form-field [class.is-error]="isError">
+        <mat-form-field [class.is-error]="isError" subscriptSizing="dynamic">
             <input 
                 matInput 
                 [type]="type()"
@@ -37,17 +37,26 @@
                 (blur)="touch.emit()"
                 (keydown)="onKeydown($event)"
             >
-            @if (hint()) {
-                <mat-hint>{{ hint() }}</mat-hint>
+            @if (icon()) {
+                <button
+                    matSuffix
+                    type="button"
+                    class="bg-transparent border-0 p-0 me-2 cursor-pointer text-text-muted hover:text-text-main"
+                    (click)="iconClick.emit()">
+                    <span class="material-symbols-outlined text-xl">{{ icon() }}</span>
+                </button>
             }
         </mat-form-field>
     }
-</label>
 
-@if (touched()) {
-    <div class="flex flex-col ga">
-        @for (error of errors(); track error.message) {
-            <span class="text-rose-600 text-sm">{{ error?.message }}</span>
+    <div class="flex flex-col gap-1">
+        @if (hint()) {
+            <span class="text-xs text-text-muted">{{ hint() }}</span>
+        }
+        @if (isError) {
+            @for (error of errors(); track error.message) {
+                <span class="text-rose-600 text-sm">{{ error?.message }}</span>
+            }
         }
     </div>
-}
+</label>

@@ -1,6 +1,7 @@
 import { Component, HostListener, signal, ElementRef, inject, OnInit } from '@angular/core';
 import { Breadcrump } from '@core/components/breadcrump/breadcrump';
 import { ActionCenter } from '@shared/components/action-center/action-center';
+import { AppService } from '@core/services/app';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -12,6 +13,7 @@ import { CommonModule } from '@angular/common';
 })
 export class Topbar implements OnInit {
   private readonly el = inject(ElementRef);
+  protected readonly app = inject(AppService);
   protected readonly isScrolled = signal(false);
 
   ngOnInit(): void {

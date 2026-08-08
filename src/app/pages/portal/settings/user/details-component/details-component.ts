@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { AuthService } from '../../../../auth/services/auth-service';
@@ -16,7 +17,8 @@ interface UserDetailsData {
   standalone: true,
   imports: [
     FormField,
-    Inputfield
+    Inputfield,
+    MatButtonModule
   ],
   templateUrl: './details-component.html',
   styleUrl: './details-component.scss',

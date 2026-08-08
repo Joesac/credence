@@ -1,4 +1,4 @@
-<section class="mt-6 px-4 w-full max-width">
+<section class="mt-6 flex flex-col items-center px-4">
     <div class="card flex flex-col gap-4 mb-6">
         <div class="flex flex-col gap-0.5">
             <mat-label class="text-text-main font-medium">Select Date</mat-label>
@@ -69,13 +69,15 @@
     </div>
 
     <mat-tab-group
+        class="w-full"
         dynamicHeight
         animationDuration="0ms"
         mat-stretch-tabs="false" 
         mat-align-tabs="start">
         <mat-tab label="Deposits">
-            <div class="flex items-center justify-between mt-4">
+            <div class="w-full mt-4">
                 <app-data-table 
+                    class="w-full"
                     [data]="depositRows()"
                     [columns]="depositColumns"
                     [loading]="isLoadingDeposits()"
@@ -103,8 +105,9 @@
             </div>
         </mat-tab>
         <mat-tab label="Withdrawals">
-            <div class="flex items-center justify-between mt-4">
+            <div class="w-full mt-4">
                 <app-data-table 
+                    class="w-full"
                     [data]="withdrawalRows()"
                     [columns]="transactionColumns"
                     [loading]="isLoadingWithdrawals()"

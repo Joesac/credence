@@ -57,7 +57,6 @@ type DailyTransaction = {
   providers: [provideNativeDateAdapter()],
   templateUrl: './daily.html',
   styleUrl: './daily.scss',
-  host: { 'class': 'w-full flex justify-center' },
 })
 export class Daily {
   protected readonly utilsService = inject(UtilsService);

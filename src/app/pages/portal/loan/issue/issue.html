@@ -19,6 +19,24 @@
                             [message]="'Please enable the member to Issue Loans'" />
                     }
 
+                    <div class="flex flex-col gap-0.5 mb-4">
+                        <mat-label class="text-text-main font-medium">Issue Date <span class="text-rose-600">*</span></mat-label>
+                        <mat-form-field>
+                            <input 
+                                matInput 
+                                readonly 
+                                [max]="maxDate" 
+                                [matDatepicker]="issuePicker" 
+                                [formField]="loanIssueForm.issueDate"
+                                (keydown)="$event.preventDefault()"
+                                (click)="issuePicker.open()"
+                            >
+                            <mat-hint>MM/DD/YYYY</mat-hint>
+                            <mat-datepicker-toggle matIconSuffix [for]="issuePicker"></mat-datepicker-toggle>
+                            <mat-datepicker #issuePicker></mat-datepicker>
+                        </mat-form-field>
+                    </div>
+
                     <app-inputfield
                         [formField]="loanIssueForm.amount"
                         label="Amount"
@@ -39,13 +57,13 @@
                         [collection]="REPAYMENT_FREQUENCIES"
                     />
 
-                    <div class="flex flex-col gap-0.5">
-                        <mat-label class="text-text-main font-medium">Choose a date</mat-label>
+                    <div class="flex flex-col gap-0.5 mb-4">
+                        <mat-label class="text-text-main font-medium">Due date <span class="text-rose-600">*</span></mat-label>
                         <mat-form-field>
                             <input 
                                 matInput 
                                 readonly 
-                                [min]="minDate" 
+                                [min]="minDate()" 
                                 [matDatepicker]="picker" 
                                 [formField]="loanIssueForm.dueDate"
                                 (keydown)="$event.preventDefault()"
@@ -67,7 +85,8 @@
                     <div class="flex justify-end">
                         <button
                             type="submit"
-                            class="btn-primary"
+                            matButton="filled"
+                            color="primary"
                             [disabled]="loanIssueForm().invalid() || isSubmitting()"
                         >{{ isSubmitting() ? 'Issuing Loan...' : 'Issue Loan' }}</button>
                     </div>

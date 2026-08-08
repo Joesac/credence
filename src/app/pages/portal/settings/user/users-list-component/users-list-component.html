@@ -1,8 +1,11 @@
 <section class="mt-6 px-4 w-full max-width">
     <div class="flex justify-end mb-8">
-      <button class="btn-primary flex items-center gap-2" (click)="addUser()">
-          <span>Add User</span>
-          <span class="material-symbols-outlined text-lg">add</span>
+      <button matButton="filled"
+                color="primary" class="flex items-center gap-2" (click)="addUser()">
+                <div class="flex items-center gap-2">
+                  <span>Add User</span>
+                  <span class="material-symbols-outlined text-lg">add</span>
+                </div>
       </button>
     </div>
 

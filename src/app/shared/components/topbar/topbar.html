@@ -2,7 +2,18 @@
   class="topbar-container flex w-full justify-between py-4 px-4"
   [class.topbar-scrolled]="isScrolled()"
 >
-    <app-breadcrump />
+    <div class="flex items-center gap-2">
+      @if (!app.isSidebarOpen()) {
+        <button
+          type="button"
+          class="bg-transparent border-0 p-1 text-text-muted hover:text-text-main transition-colors cursor-pointer"
+          (click)="app.toggleSidebar()"
+        >
+          <span class="material-symbols-outlined text-2xl">chevron_right</span>
+        </button>
+      }
+      <app-breadcrump />
+    </div>
     <div>
         <app-action-center />
     </div>

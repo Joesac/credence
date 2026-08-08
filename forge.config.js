@@ -5,7 +5,6 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: './electron/assets/icons/icon',
-    extraResource: ['./prepared_data_for_application.xlsx'],
   },
   rebuildConfig: {},
   makers: [

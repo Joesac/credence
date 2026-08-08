@@ -68,6 +68,7 @@ export interface CreateDepositPayload {
   amount: number;
   refreshmentToken: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface UpdateDepositPayload {
@@ -95,6 +96,7 @@ export interface CreateWithdrawalPayload {
   issuerId: string;
   amount: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface UpdateWithdrawalPayload {
@@ -147,6 +149,7 @@ export interface CreateLoanPayload {
   repaymentFrequency: string;
   dueDate: string;
   notes?: string | null;
+  date: string;
 }
 
 export interface UpdateLoanPayload extends Partial<Omit<CreateLoanPayload, 'memberId' | 'issuerId'>> {
@@ -170,6 +173,7 @@ export interface CreateLoanRepaymentPayload {
   receiverId: string;
   amount: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface UpdateLoanRepaymentPayload {
@@ -356,6 +360,33 @@ export interface RecentActivity {
   amount: number;
   date: string;
   status: string;
+}
+
+export interface CreateFundDistributionPayload {
+  memberId: string;
+  giverId: string;
+  amount: number;
+  notes?: string | null;
+  dateReceived?: string;
+}
+
+export interface FundDistributionMemberStatsPayload {
+  memberId: string;
+}
+
+export interface FundDistributionStats {
+  totalDeposits: number;
+  totalWithdrawals: number;
+  totalLoanAmount: number;
+  totalRepayments: number;
+  amountToReceive: number;
+  hasReceived: boolean;
+}
+
+export interface GlobalFundDistributionStats {
+  totalDeposits: number;
+  totalWithdrawals: number;
+  netContributions: number;
 }
 
 export interface DashboardChartDataPoint {

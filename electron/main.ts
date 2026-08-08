@@ -10,6 +10,7 @@ import {
   CREATE_WITHDRAWALS_TABLE,
   CREATE_LOANS_TABLE,
   CREATE_LOAN_REPAYMENTS_TABLE,
+  CREATE_FUND_DISTRIBUTIONS_TABLE,
 } from './database/index';
 import {
   DEVELOPMENT_DATABASE_FILENAME,
@@ -46,6 +47,10 @@ import {
   IPC_CHANNEL_GET_DASHBOARD_DATA,
   IPC_CHANNEL_GET_DAILY_SUMMARY,
   IPC_CHANNEL_TOGGLE_USER_STATUS,
+  IPC_CHANNEL_CREATE_FUND_DISTRIBUTION,
+  IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS,
+  IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS,
+  IPC_CHANNEL_GET_VERSION,
   PRODUCTION_DATABASE_FILENAME,
   DEFAULT_ADMIN_USER_ID,
 } from './constants';
@@ -108,6 +113,8 @@ import {
   PaginationRequest,
   DashboardData,
   DailySummaryPayload,
+  CreateFundDistributionPayload,
+  FundDistributionMemberStatsPayload,
 } from './types';
 import {
   createLoan,
@@ -121,7 +128,11 @@ import {
   deleteLoanRepayment,
 } from './functions/loans';
 import { fetchDashboardData } from './functions/dashboard';
-import { autoSeedIfEmpty } from './functions/seed';
+import {
+  createFundDistribution,
+  getFundDistributionStats,
+  getGlobalFundDistributionStats,
+} from './functions/fund-distributions';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
 
@@ -131,6 +142,7 @@ if (squirrelStartup) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 let db: Database.Database;
 
 function initDatabase(): void {
@@ -160,18 +172,52 @@ function initDatabase(): void {
   db.exec(CREATE_WITHDRAWALS_TABLE);
   db.exec(CREATE_LOANS_TABLE);
   db.exec(CREATE_LOAN_REPAYMENTS_TABLE);
+  db.exec(CREATE_FUND_DISTRIBUTIONS_TABLE);
   runMigrations(db);
 
   seedDefaultAdminUser(db);
+}
 
-  // Auto-seed from Excel if the database is empty
-  autoSeedIfEmpty(db);
+function createSplashWindow(): void {
+  splashWindow = new BrowserWindow({
+    width: 420,
+    height: 520,
+    frame: false,
+    resizable: false,
+    movable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    backgroundColor: '#09090B',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  const splashPath = !app.isPackaged
+    ? path.join(__dirname, '../public/splash.html')
+    : path.join(app.getAppPath(), 'dist/credence/browser/splash.html');
+
+  splashWindow.loadFile(splashPath).catch((err) => {
+    console.error('Failed to load splash screen', err);
+  });
+
+  splashWindow.on('ready-to-show', () => {
+    splashWindow?.show();
+  });
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
 }
 
 function createWindow(): void {
-  mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    mainWindow = new BrowserWindow({
+    minWidth: 1024,
+    minHeight: 700,
+    show: false,
+    backgroundColor: '#09090B',
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../electron/assets/icons/icon.ico'),
     webPreferences: {
@@ -183,20 +229,10 @@ function createWindow(): void {
   });
 
   // If running in dev, load the Angular live dev server. Otherwise, load the dist build.
-  // const isDev = !app.isPackaged;
-  // if (isDev) {
-  //   mainWindow.loadURL('http://localhost:4200');
-  //   mainWindow.webContents.openDevTools();
-  // } else {
-  //   mainWindow.loadFile(path.join(__dirname, '../dist/credence/browser/index.html'));
-  // }
-
-  // If running in dev, load the Angular live dev server. Otherwise, load the dist build.
   const isDev = !app.isPackaged;
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:4200');
-    mainWindow.webContents.openDevTools();
   } else {
     // app.getAppPath() reliably targets the root inside app.asar in production
     const indexPath = path.join(app.getAppPath(), 'dist/credence/browser/index.html');
@@ -206,11 +242,24 @@ function createWindow(): void {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  mainWindow.webContents.once('did-finish-load', () => {
+    setTimeout(() => {
+      mainWindow?.maximize();
+      splashWindow?.close();
+      mainWindow?.show();
+      if (isDev) {
+        mainWindow?.webContents.openDevTools();
+      }
+    }, 800);
+  });
 }
 
 /**
  * IPC Channel Handlers (Listens to Angular requests)
  * */
+registerIpcHandler(IPC_CHANNEL_GET_VERSION, async () => app.getVersion());
+
 registerIpcHandler(IPC_CHANNEL_GET_USERS, async () => fetchUsers(db));
 
 registerIpcHandler(IPC_CHANNEL_ADD_USER, async (payload: CreateUserPayload) =>
@@ -369,11 +418,27 @@ registerIpcHandler(IPC_CHANNEL_GET_DAILY_SUMMARY, async (payload: DailySummaryPa
   return fetchDailySummary(db, payload.date);
 });
 
+registerIpcHandler(IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS, async (payload: FundDistributionMemberStatsPayload) => {
+  if (!payload?.memberId) {
+    throw new Error('Missing member id payload');
+  }
+  return getFundDistributionStats(db, payload);
+});
+
+registerIpcHandler(IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS, async () =>
+  getGlobalFundDistributionStats(db)
+);
+
+registerIpcHandler(IPC_CHANNEL_CREATE_FUND_DISTRIBUTION, async (payload: CreateFundDistributionPayload) =>
+  createFundDistribution(db, payload)
+);
+
 app.whenReady().then(() => {
   if (app.isPackaged) {
     Menu.setApplicationMenu(null);
   }
   initDatabase();
+  createSplashWindow();
   createWindow();
 });
 

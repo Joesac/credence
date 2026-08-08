@@ -5,6 +5,7 @@ export interface WithdrawalPayload {
   issuerId: string;
   amount: number;
   notes?: string | null;
+  date: string;
 }
 
 export interface WithdrawalUpdatePayload extends Partial<WithdrawalPayload> {

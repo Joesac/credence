@@ -1,6 +1,9 @@
 import { Component, signal, computed, inject, viewChild } from '@angular/core';
 import { required, form, FormField, min } from '@angular/forms/signals';
 import { MatButtonModule } from "@angular/material/button";
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatInputModule } from '@angular/material/input';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Loan } from '@interfaces/loan.interface';
@@ -16,6 +19,7 @@ import { LoanService } from '../service/loan-service';
 import { LoanRepaymentList } from '../components/loan-repayment-list/loan-repayment-list';
 
 interface repaymentData {
+  date: Date;
   amount: number | null;
   notes: string;
 }
@@ -31,8 +35,11 @@ interface repaymentData {
     LoanSelectionDropdownComponent,
     LoanDetails,
     LoanRepaymentList,
-    DisableCoverComponent
+    DisableCoverComponent,
+    MatDatepickerModule,
+    MatInputModule,
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './repayment.html',
   styleUrl: './repayment.scss'
 })
@@ -50,6 +57,9 @@ export class Repayment {
   protected readonly selectedMember = signal<Member | null>(null);
   protected readonly selectedLoan = signal<Loan | null>(null);
   protected readonly isSubmitting = signal(false);
+
+  protected readonly maxDate: Date = new Date();
+
   protected readonly loanDetails = computed<LoanDetailsData | null>(() => {
     const loan = this.selectedLoan();
     if (!loan) {
@@ -66,11 +76,16 @@ export class Repayment {
   });
 
   private INITIAL_DATA = <repaymentData>({
+    date: new Date(),
     amount: null,
     notes: ''
   })
   protected readonly repaymentModel = signal<repaymentData>(this.INITIAL_DATA);
   protected repaymentForm = form(this.repaymentModel, (path) => {
+    required(path.date, {
+      message: 'Date is required'
+    });
+
     required(path.amount, {
       message: 'Amount is required'
     });
@@ -119,13 +134,14 @@ export class Repayment {
       return;
     }
 
-    const { amount, notes } = this.repaymentForm().value();
+    const { date, amount, notes } = this.repaymentForm().value();
     const normalizedAmount = Number(amount);
     const payload = {
       loanId: loan.id,
       receiverId,
       amount: normalizedAmount,
       notes: notes?.trim() ? notes.trim() : null,
+      date: (date as Date).toLocaleDateString('en-CA'),
     };
 
     this.isSubmitting.set(true);

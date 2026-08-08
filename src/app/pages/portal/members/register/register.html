@@ -25,7 +25,8 @@
     <div class="flex justify-end">
       <button
         type="submit"
-        class="btn-primary"
+        matButton="filled"
+        color="primary"
         [disabled]="registerForm().invalid() || isSubmitting()"
       >
         {{ isSubmitting() ? 'Registering…' : 'Register' }}

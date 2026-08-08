@@ -115,9 +115,6 @@
 
 // 3. Custom component layers
 @layer components {
-  .btn-primary {
-    @apply cursor-pointer px-6 py-2.5 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-surface-hover disabled:text-text-muted/40 text-text-on-primary font-medium rounded-xl transition-colors;
-  }
 
   .card {
     @apply w-full p-6 bg-surface rounded-2xl border border-border-base shadow-ui-sm;
@@ -172,4 +169,32 @@
   .mat-mdc-form-field-bottom-align {
     height: 4px;
   }
+}
+
+// Sleek, theme-aware scrollbars
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-text-muted) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-text-muted);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-brand-secondary);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

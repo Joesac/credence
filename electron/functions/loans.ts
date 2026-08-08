@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
 import { LOAN_BASE_COLUMNS } from '../constants';
 import { createIpcError } from '../errors';
+import { buildTransactionTimestamp } from './utils';
 import {
   CreateLoanPayload,
   UpdateLoanPayload,
@@ -149,9 +150,10 @@ export function createLoan(db: Database.Database, payload: CreateLoanPayload) {
   }
 
   const id = randomUUID();
+  const timestamp = buildTransactionTimestamp(payload.date);
   const stmt = db.prepare(`
-    INSERT INTO loans (id, member_id, issuer_id, amount, interest_rate, repayment_frequency, due_date, notes)
-    VALUES (@id, @member_id, @issuer_id, @amount, @interest_rate, @repayment_frequency, @due_date, @notes)
+    INSERT INTO loans (id, member_id, issuer_id, amount, interest_rate, repayment_frequency, due_date, notes, date_created, date_updated)
+    VALUES (@id, @member_id, @issuer_id, @amount, @interest_rate, @repayment_frequency, @due_date, @notes, @date_created, @date_updated)
   `);
 
   stmt.run({
@@ -163,6 +165,8 @@ export function createLoan(db: Database.Database, payload: CreateLoanPayload) {
     repayment_frequency: payload.repaymentFrequency,
     due_date: payload.dueDate,
     notes: payload.notes ?? null,
+    date_created: timestamp,
+    date_updated: timestamp,
   });
 
   return fetchLoanById(db, id);
@@ -433,9 +437,10 @@ export function createLoanRepayment(db: Database.Database, payload: CreateLoanRe
   assertLoanIsActive(db, payload.loanId);
 
   const id = randomUUID();
+  const timestamp = buildTransactionTimestamp(payload.date);
   const stmt = db.prepare(`
-    INSERT INTO loan_repayments (id, loan_id, receiver_id, amount, notes)
-    VALUES (@id, @loan_id, @receiver_id, @amount, @notes)
+    INSERT INTO loan_repayments (id, loan_id, receiver_id, amount, notes, date_created)
+    VALUES (@id, @loan_id, @receiver_id, @amount, @notes, @date_created)
   `);
 
   stmt.run({
@@ -444,6 +449,7 @@ export function createLoanRepayment(db: Database.Database, payload: CreateLoanRe
     receiver_id: payload.receiverId,
     amount: payload.amount,
     notes: payload.notes ?? null,
+    date_created: timestamp,
   });
 
   return fetchLoanRepaymentById(db, id);
