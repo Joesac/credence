@@ -9,7 +9,7 @@ import { memberRouter } from './routes/member';
 const app = express();
 
 // CORS: allow all origins. The API is protected by the Bearer API key for sync
-// and by JWT for member routes, so origin allowlisting is not required.
+// and by JWT for member routes, so origin allowlisting is not required..
 // We handle OPTIONS manually to guarantee preflight requests never hit auth.
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
