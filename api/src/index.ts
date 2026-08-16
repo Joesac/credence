@@ -10,7 +10,7 @@ const app = express();
 
 // CORS: allow all origins. The API is protected by the Bearer API key for sync
 // and by JWT for member routes, so origin allowlisting is not required.
-// We handle OPTIONS manually to guarantee preflight requests never hit auth.
+// We handle OPTIONS manually to guarantee preflight requests never hit auth. Great here
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
