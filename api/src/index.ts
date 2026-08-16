@@ -1,5 +1,4 @@
-import express, { type Request, type Response } from 'express';
-import cors from 'cors';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import { requireApiKey } from './middleware/auth';
 import { errorHandler } from './middleware/error';
 import { syncRouter } from './routes/sync';
@@ -11,11 +10,19 @@ const app = express();
 
 // CORS: allow all origins. The API is protected by the Bearer API key for sync
 // and by JWT for member routes, so origin allowlisting is not required.
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
-}));
+// We handle OPTIONS manually to guarantee preflight requests never hit auth.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
+  next();
+});
 
 // JSON body parser with 1MB limit (100 rows max per batch)
 app.use(express.json({ limit: '1mb' }));
