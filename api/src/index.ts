@@ -33,11 +33,11 @@ app.use('/api', healthRouter);
 // Member auth routes (login, refresh) — public, no API key needed
 app.use('/api', authRouter);
 
-// Member-facing routes — JWT auth (handled inside the router middleware)
-app.use('/api', memberRouter);
-
 // Sync routes require Bearer API key (officer desktop push)
 app.use('/api', requireApiKey, syncRouter);
+
+// Member-facing routes — JWT auth (handled inside the router middleware)
+app.use('/api', memberRouter);
 
 // 404 handler for unmatched routes
 app.use((_req: Request, res: Response) => {
