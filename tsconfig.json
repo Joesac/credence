@@ -18,6 +18,7 @@
       "@shared/*": ["./src/app/shared/*"],
       "@constants/*": ["./src/app/constants/*"],
       "@interfaces/*": ["./src/app/interfaces/*"],
+      "@api/*": ["./src/app/api/*"],
       "@database/*": ["./electron/database/*"],
       "@electronFunc": ["./electron/functions/*"],
       "@electron": ["./electron"]

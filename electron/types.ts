@@ -43,6 +43,7 @@ export interface CreateMemberPayload {
   fullname: string;
   telephoneNumber: string;
   location: string;
+  password: string;
   creatorId: string;
 }
 
@@ -51,6 +52,7 @@ export interface UpdateMemberPayload {
   fullname?: string;
   telephoneNumber?: string;
   location?: string;
+  password?: string;
   creatorId?: string;
   isDisabled?: number | boolean;
 }
@@ -230,6 +232,7 @@ export type DbMemberRow = {
   account_number: string;
   telephoneNumber: string;
   location: string;
+  password: string | null;
   creator_id: string;
   date_created: string;
   date_updated: string;
@@ -240,7 +243,7 @@ export type DbMemberRow = {
   creator_username: string | null;
 };
 
-export type SanitizedMember = DbMemberRow;
+export type SanitizedMember = Omit<DbMemberRow, 'password'>;
 
 export type DbDepositRow = {
   id: string;

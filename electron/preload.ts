@@ -39,6 +39,11 @@ import {
   IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS,
   IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS,
   IPC_CHANNEL_GET_VERSION,
+  IPC_CHANNEL_GET_UNSYNCED_ROWS,
+  IPC_CHANNEL_MARK_ROWS_SYNCED,
+  IPC_CHANNEL_GET_SYNC_STATS,
+  IPC_CHANNEL_GET_SETTING,
+  IPC_CHANNEL_SET_SETTING,
 } from './constants';
 
 contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
@@ -122,4 +127,13 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
    * App info bridge
    */
   getVersion: () => ipcRenderer.invoke(IPC_CHANNEL_GET_VERSION),
+
+  /**
+   * Cloud sync bridge
+   */
+  getUnsyncedRows: (payload: { table: string }) => ipcRenderer.invoke(IPC_CHANNEL_GET_UNSYNCED_ROWS, payload),
+  markRowsSynced: (payload: { table: string; ids: string[] }) => ipcRenderer.invoke(IPC_CHANNEL_MARK_ROWS_SYNCED, payload),
+  getSyncStats: () => ipcRenderer.invoke(IPC_CHANNEL_GET_SYNC_STATS),
+  getSetting: (payload: { key: string }) => ipcRenderer.invoke(IPC_CHANNEL_GET_SETTING, payload),
+  setSetting: (payload: { key: string; value: string }) => ipcRenderer.invoke(IPC_CHANNEL_SET_SETTING, payload),
 });

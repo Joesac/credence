@@ -11,6 +11,7 @@ import {
   CREATE_LOANS_TABLE,
   CREATE_LOAN_REPAYMENTS_TABLE,
   CREATE_FUND_DISTRIBUTIONS_TABLE,
+  CREATE_APP_SETTINGS_TABLE,
 } from './database/index';
 import {
   DEVELOPMENT_DATABASE_FILENAME,
@@ -51,6 +52,11 @@ import {
   IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS,
   IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS,
   IPC_CHANNEL_GET_VERSION,
+  IPC_CHANNEL_GET_UNSYNCED_ROWS,
+  IPC_CHANNEL_MARK_ROWS_SYNCED,
+  IPC_CHANNEL_GET_SYNC_STATS,
+  IPC_CHANNEL_GET_SETTING,
+  IPC_CHANNEL_SET_SETTING,
   PRODUCTION_DATABASE_FILENAME,
   DEFAULT_ADMIN_USER_ID,
 } from './constants';
@@ -133,6 +139,13 @@ import {
   getFundDistributionStats,
   getGlobalFundDistributionStats,
 } from './functions/fund-distributions';
+import {
+  getUnsyncedRows,
+  markRowsSynced,
+  getSyncStats,
+  getSetting,
+  setSetting,
+} from './functions/sync';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
 
@@ -173,6 +186,7 @@ function initDatabase(): void {
   db.exec(CREATE_LOANS_TABLE);
   db.exec(CREATE_LOAN_REPAYMENTS_TABLE);
   db.exec(CREATE_FUND_DISTRIBUTIONS_TABLE);
+  db.exec(CREATE_APP_SETTINGS_TABLE);
   runMigrations(db);
 
   seedDefaultAdminUser(db);
@@ -431,6 +445,29 @@ registerIpcHandler(IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS, async () =>
 
 registerIpcHandler(IPC_CHANNEL_CREATE_FUND_DISTRIBUTION, async (payload: CreateFundDistributionPayload) =>
   createFundDistribution(db, payload)
+);
+
+/**
+ * Sync IPC handlers (cloud sync functionality)
+ */
+registerIpcHandler(IPC_CHANNEL_GET_UNSYNCED_ROWS, async (payload: { table: string }) =>
+  getUnsyncedRows(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_MARK_ROWS_SYNCED, async (payload: { table: string; ids: string[] }) =>
+  markRowsSynced(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_SYNC_STATS, async () =>
+  getSyncStats(db)
+);
+
+registerIpcHandler(IPC_CHANNEL_GET_SETTING, async (payload: { key: string }) =>
+  getSetting(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_SET_SETTING, async (payload: { key: string; value: string }) =>
+  setSetting(db, payload)
 );
 
 app.whenReady().then(() => {

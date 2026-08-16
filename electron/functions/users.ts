@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { randomUUID, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
+import { randomUUID } from 'crypto';
 import {
   DEFAULT_ADMIN_USER_ID,
   DEFAULT_ADMIN_USER,
@@ -15,25 +15,11 @@ import {
   VerifyPasswordPayload,
 } from '../types';
 import { createIpcError } from '../errors';
+import { hashPassword, verifyPassword } from './utils';
 
 function sanitizeUser(row: DbUserRow): SanitizedUser {
   const { password: _password, ...rest } = row;
   return rest;
-}
-
-function hashPassword(raw: string) {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(raw, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(raw: string, stored: string) {
-  const [salt, hash] = stored.split(':');
-  if (!salt || !hash) return false;
-  const derived = scryptSync(raw, salt, 64);
-  const storedBuffer = Buffer.from(hash, 'hex');
-  if (storedBuffer.length !== derived.length) return false;
-  return timingSafeEqual(storedBuffer, derived);
 }
 
 export function fetchUsers(db: Database.Database) {
@@ -132,7 +118,7 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
 
   const update = db.prepare(`
     UPDATE users
-    SET ${fields.join(', ')}, date_updated = datetime('now')
+    SET ${fields.join(', ')}, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id
   `);
   const result = update.run(params);
@@ -187,7 +173,7 @@ export function toggleUserStatus(db: Database.Database, userId: string) {
 
   const newStatus = user.is_disabled ? 0 : 1;
   const stmt = db.prepare(`
-    UPDATE users SET is_disabled = @newStatus, date_updated = datetime('now') WHERE id = @id
+    UPDATE users SET is_disabled = @newStatus, is_synced = 0, date_updated = datetime('now') WHERE id = @id
   `);
   stmt.run({ id: userId, newStatus });
 

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS members (
   account_number TEXT NOT NULL,
   telephoneNumber TEXT NOT NULL,
   location TEXT NOT NULL,
+  password TEXT,
   creator_id TEXT NOT NULL,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),
   date_updated TEXT NOT NULL DEFAULT (datetime('now')),

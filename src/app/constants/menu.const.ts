@@ -52,6 +52,7 @@ export const MENU: Menu[] = [
     children: [
       { id: 'user-details', label: 'User Details', isActive: false },
       { id: 'users-list', label: 'Users', isActive: false },
+      { id: 'sync', label: 'Cloud Sync', isActive: false },
     ]
   },
 ];

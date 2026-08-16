@@ -146,3 +146,12 @@ export const IPC_CHANNEL_CREATE_FUND_DISTRIBUTION = 'create-fund-distribution';
 export const IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS = 'get-fund-distribution-stats';
 export const IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS = 'get-global-fund-distribution-stats';
 export const IPC_CHANNEL_GET_VERSION = 'get-version';
+
+/**
+ * Sync IPC channels for cloud sync functionality.
+ */
+export const IPC_CHANNEL_GET_UNSYNCED_ROWS = 'get-unsynced-rows';
+export const IPC_CHANNEL_MARK_ROWS_SYNCED = 'mark-rows-synced';
+export const IPC_CHANNEL_GET_SYNC_STATS = 'get-sync-stats';
+export const IPC_CHANNEL_GET_SETTING = 'get-setting';
+export const IPC_CHANNEL_SET_SETTING = 'set-setting';

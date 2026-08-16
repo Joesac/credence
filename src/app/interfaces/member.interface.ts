@@ -18,6 +18,7 @@ export interface MemberPayload {
   fullname: string;
   telephoneNumber: string;
   location: string;
+  password: string;
   creatorId: string;
   isDisabled?: number | boolean;
 }

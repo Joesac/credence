@@ -1,11 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { AUTH_SESSION_KEY } from '@constants/auth.const';
 import { DashboardData } from '@interfaces/dashboard.interface';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class DashboardService extends IpcBridgeService {
   /**
    * Builds a per-session key from the current auth session token.

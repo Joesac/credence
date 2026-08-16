@@ -135,6 +135,28 @@ const addLoanDateUpdatedColumn: Migration = {
   },
 };
 
+const addMemberPasswordColumn: Migration = {
+  id: '20260814_add_member_password_column',
+  description: 'Add password column to members table for future mobile app member login',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'members', 'password', 'password TEXT');
+  },
+};
+
+const createAppSettingsTable: Migration = {
+  id: '20260814_create_app_settings',
+  description: 'Create app_settings table for cloud sync configuration storage',
+  run: (db: Database.Database) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        date_updated TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+  },
+};
+
 export const MIGRATIONS: Migration[] = [
   migrateWithdrawalsColumns,
   addTransactionIdColumns,
@@ -147,4 +169,6 @@ export const MIGRATIONS: Migration[] = [
   addUsersStatusAndLoginColumns,
   makeUsersUsernameUnique,
   addLoanDateUpdatedColumn,
+  addMemberPasswordColumn,
+  createAppSettingsTable,
 ];

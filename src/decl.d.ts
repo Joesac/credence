@@ -64,6 +64,11 @@ export interface ElectronAPI {
   getGlobalFundDistributionStats: () => Promise<GlobalFundDistributionStats>;
   createFundDistribution: (payload: CreateFundDistributionPayload) => Promise<{ success: boolean }>;
   getVersion: () => Promise<string>;
+  getUnsyncedRows: (payload: { table: string }) => Promise<Record<string, unknown>[]>;
+  markRowsSynced: (payload: { table: string; ids: string[] }) => Promise<{ success: boolean }>;
+  getSyncStats: () => Promise<Record<string, number>>;
+  getSetting: (payload: { key: string }) => Promise<string | null>;
+  setSetting: (payload: { key: string; value: string }) => Promise<{ success: boolean }>;
 }
 
 declare global {

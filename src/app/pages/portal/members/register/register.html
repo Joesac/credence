@@ -15,11 +15,19 @@
       label="Telephone number"
     />
 
-    <app-dropdown 
+    <app-dropdown
       [formField]="registerForm.location"
       label="Location"
       [collection]="dropdownItems"
       [inputReadonly]="true"
+    />
+
+    <app-inputfield
+      [formField]="registerForm.password"
+      label="Password"
+      type="password"
+      placeholder="Set a password for the member"
+      hint="Minimum 6 characters. Used for future mobile app login."
     />
 
     <div class="flex justify-end">

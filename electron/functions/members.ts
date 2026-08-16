@@ -10,9 +10,11 @@ import {
   SanitizedMember,
   UpdateMemberPayload,
 } from '../types';
+import { hashPassword } from './utils';
 
 function sanitizeMember(row: DbMemberRow): SanitizedMember {
-  return row;
+  const { password: _password, ...rest } = row;
+  return rest;
 }
 
 /**
@@ -108,14 +110,16 @@ export function createMember(db: Database.Database, payload: CreateMemberPayload
   const id = randomUUID();
   const lastAccountNumber = getLastMemberAccountNumber(db);
   const lastSeqStr = extractAccountSequence(lastAccountNumber);
-  
+
   const nextVal = (lastSeqStr ? Number(lastSeqStr) : 0) + 1;
   const padding = lastSeqStr ? lastSeqStr.length : 3; // Default padding to 3 (e.g., 001)
   const nextAccountNumber = `TVC${nextVal.toString().padStart(padding, '0')}`;
 
+  const passwordHash = hashPassword(payload.password);
+
   const insert = db.prepare(`
-    INSERT INTO members (id, fullname, account_number, telephoneNumber, location, creator_id)
-    VALUES (@id, @fullname, @account_number, @telephoneNumber, @location, @creator_id)
+    INSERT INTO members (id, fullname, account_number, telephoneNumber, location, password, creator_id)
+    VALUES (@id, @fullname, @account_number, @telephoneNumber, @location, @password, @creator_id)
   `);
 
   insert.run({
@@ -124,6 +128,7 @@ export function createMember(db: Database.Database, payload: CreateMemberPayload
     account_number: nextAccountNumber,
     telephoneNumber: payload.telephoneNumber,
     location: payload.location,
+    password: passwordHash,
     creator_id: payload.creatorId,
   });
 
@@ -149,6 +154,11 @@ export function updateMember(db: Database.Database, payload: UpdateMemberPayload
     params.location = payload.location;
   }
 
+  if (payload.password !== undefined) {
+    fields.push('password = @password');
+    params.password = hashPassword(payload.password);
+  }
+
   if (payload.creatorId !== undefined) {
     fields.push('creator_id = @creator_id');
     params.creator_id = payload.creatorId;
@@ -165,7 +175,7 @@ export function updateMember(db: Database.Database, payload: UpdateMemberPayload
 
   const update = db.prepare(`
     UPDATE members
-    SET ${fields.join(', ')}, date_updated = datetime('now')
+    SET ${fields.join(', ')}, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id AND is_deleted = 0
   `);
   const result = update.run(params);
@@ -178,7 +188,7 @@ export function updateMember(db: Database.Database, payload: UpdateMemberPayload
 export function deleteMember(db: Database.Database, payload: DeleteMemberPayload) {
   const stmt = db.prepare(`
     UPDATE members
-    SET is_deleted = 1, date_updated = datetime('now')
+    SET is_deleted = 1, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id AND is_deleted = 0
   `);
   const result = stmt.run({ id: payload.id });

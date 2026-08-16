@@ -217,7 +217,7 @@ export function updateDeposit(db: Database.Database, payload: UpdateDepositPaylo
 
   const stmt = db.prepare(`
     UPDATE deposits
-    SET ${fields.join(', ')}, date_updated = datetime('now')
+    SET ${fields.join(', ')}, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id
   `);
   const result = stmt.run(params);
@@ -233,7 +233,7 @@ export function updateDeposit(db: Database.Database, payload: UpdateDepositPaylo
 export function deleteDeposit(db: Database.Database, payload: DeleteDepositPayload) {
   const stmt = db.prepare(`
     UPDATE deposits
-    SET is_cancelled = 1, date_updated = datetime('now')
+    SET is_cancelled = 1, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id AND is_cancelled = 0
   `);
   const result = stmt.run({ id: payload.id });
@@ -457,7 +457,7 @@ export function updateWithdrawal(db: Database.Database, payload: UpdateWithdrawa
 
   const stmt = db.prepare(`
     UPDATE withdrawals
-    SET ${fields.join(', ')}, date_updated = datetime('now')
+    SET ${fields.join(', ')}, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id
   `);
   const result = stmt.run(params);
@@ -474,7 +474,7 @@ export function deleteWithdrawal(db: Database.Database, payload: DeleteWithdrawa
   // Soft-delete withdrawals so audit history stays intact.
   const stmt = db.prepare(`
     UPDATE withdrawals
-    SET is_cancelled = 1, date_updated = datetime('now')
+    SET is_cancelled = 1, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id AND is_cancelled = 0
   `);
   const result = stmt.run({ id: payload.id });

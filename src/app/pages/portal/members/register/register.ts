@@ -12,6 +12,7 @@ interface RegisterData {
   fullName: string;
   phoneNumber: string;
   location: string | null;
+  password: string;
 }
 
 @Component({
@@ -45,7 +46,8 @@ export class Register {
   private INITIAL_DATA = <RegisterData>({
     fullName: '',
     phoneNumber: '',
-    location: null
+    location: null,
+    password: '',
   });
 
   protected readonly registerModel = signal<RegisterData>(this.INITIAL_DATA);
@@ -65,6 +67,14 @@ export class Register {
 
     required(path.location, {
       message: 'Location is required.'
+    });
+
+    required(path.password, {
+      message: 'Password is required.'
+    });
+
+    pattern(path.password, /.{6,}/, {
+      message: 'Password must be at least 6 characters long.'
     });
   });
 
@@ -94,6 +104,7 @@ export class Register {
       fullname: payload.fullName.trim(),
       telephoneNumber: payload.phoneNumber.trim(),
       location: (payload.location ?? '').trim(),
+      password: payload.password,
       creatorId,
     };
 

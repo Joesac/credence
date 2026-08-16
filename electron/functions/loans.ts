@@ -217,7 +217,7 @@ export function updateLoan(db: Database.Database, payload: UpdateLoanPayload) {
 
     const stmt = db.prepare(`
     UPDATE loans
-    SET ${fields.join(', ')}, date_updated = datetime('now')
+    SET ${fields.join(', ')}, is_synced = 0, date_updated = datetime('now')
     WHERE id = @id AND is_cancelled = 0
   `);
     const result = stmt.run(params);
@@ -230,7 +230,7 @@ export function updateLoan(db: Database.Database, payload: UpdateLoanPayload) {
 export function deleteLoan(db: Database.Database, payload: DeleteLoanPayload) {
     const stmt = db.prepare(`
     UPDATE loans
-    SET is_cancelled = 1
+    SET is_cancelled = 1, is_synced = 0
     WHERE id = @id AND is_cancelled = 0
   `);
     const result = stmt.run({ id: payload.id });
@@ -483,7 +483,7 @@ export function updateLoanRepayment(db: Database.Database, payload: UpdateLoanRe
 
   const stmt = db.prepare(`
     UPDATE loan_repayments
-    SET ${fields.join(', ')}, date_created = date_created
+    SET ${fields.join(', ')}, is_synced = 0, date_created = date_created
     WHERE id = @id
   `);
   const result = stmt.run(params);
@@ -497,7 +497,7 @@ export function updateLoanRepayment(db: Database.Database, payload: UpdateLoanRe
 export function deleteLoanRepayment(db: Database.Database, payload: DeleteLoanRepaymentPayload) {
   const stmt = db.prepare(`
     UPDATE loan_repayments
-    SET is_cancelled = 1
+    SET is_cancelled = 1, is_synced = 0
     WHERE id = @id AND is_cancelled = 0
   `);
   const result = stmt.run({ id: payload.id });

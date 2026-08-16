@@ -1,9 +1,14 @@
 import { Service } from '@angular/core';
-import { IpcBridgeService } from '../../core/services/ipc-bridge-service';
+import { CloudHttpService } from './http-client';
+import { SyncResponse } from '@interfaces/sync.interface';
 
+/**
+ * Cloud sync client for the users table.
+ * Pushes unsynced user rows to the cloud API for upsert.
+ */
 @Service()
-export class Users extends IpcBridgeService {
-    getUsers(): Promise<any[]> {
-        return this.executeIPC(api => api.getUsers());
-    }
+export class CloudUsersService extends CloudHttpService {
+  sync(rows: Record<string, unknown>[]): Promise<SyncResponse> {
+    return this.post<SyncResponse>('/api/sync/users', { rows });
+  }
 }

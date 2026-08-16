@@ -106,6 +106,11 @@ export const routes: Routes = [
           path: 'users-list',
           loadComponent: () => import('./pages/portal/settings/user/users-list-component/users-list-component').then(m => m.UsersListComponent),
           data: { breadcrumb: ['Users'] }
+        },
+        {
+          path: 'sync',
+          loadComponent: () => import('./pages/portal/settings/sync/sync').then(m => m.SyncComponent),
+          data: { breadcrumb: ['Cloud Sync'] }
         }
       ] 
     }
