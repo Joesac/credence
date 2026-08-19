@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { eq, and, desc, sql, isNull } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import {
   members,
@@ -53,7 +53,7 @@ router.get('/members/me', async (req, res, next) => {
         is_disabled: members.is_disabled,
       })
       .from(members)
-      .where(and(eq(members.id, memberId), isNull(members.is_deleted)));
+      .where(and(eq(members.id, memberId), eq(members.is_deleted, false)));
 
     if (!member) {
       res.status(404).json({ code: 'NOT_FOUND', message: 'Member not found.' });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../../db';
 import { members } from '../../db/schema';
 import { verifyPassword } from '../utils/password';
@@ -66,7 +66,7 @@ router.post('/auth/login', async (req, res, next) => {
         is_disabled: members.is_disabled,
       })
       .from(members)
-      .where(and(eq(members.account_number, accountNumber), isNull(members.is_deleted)));
+      .where(and(eq(members.account_number, accountNumber), eq(members.is_deleted, false)));
 
     if (!member || member.is_disabled) {
       res.status(401).json({ code: 'UNAUTHORIZED', message: 'Invalid account number or password.' });
