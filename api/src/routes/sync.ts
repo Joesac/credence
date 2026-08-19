@@ -7,8 +7,6 @@ import { TABLE_REGISTRY, type SyncableTableName } from '../../db/schema';
 
 const router = Router();
 
-router.use(requireApiKey);
-
 const SYNCABLE_TABLES = Object.keys(TABLE_REGISTRY) as SyncableTableName[];
 
 const syncBodySchema = z.object({
@@ -25,7 +23,7 @@ const syncBodySchema = z.object({
  * Body: { rows: Record<string, unknown>[] }
  * Response: { success: true, syncedIds: string[] }
  */
-router.post('/sync/:table', async (req, res, next) => {
+router.post('/sync/:table', requireApiKey, async (req, res, next) => {
   try {
     const tableName = req.params.table as SyncableTableName;
     if (!SYNCABLE_TABLES.includes(tableName)) {
