@@ -1,5 +1,4 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
-import { requireApiKey } from './middleware/auth';
 import { errorHandler } from './middleware/error';
 import { syncRouter } from './routes/sync';
 import { healthRouter } from './routes/health';
@@ -34,7 +33,7 @@ app.use('/api', healthRouter);
 app.use('/api', authRouter);
 
 // Sync routes require Bearer API key (officer desktop push)
-app.use('/api', requireApiKey, syncRouter);
+app.use('/api', syncRouter);
 
 // Member-facing routes — JWT auth (handled inside the router middleware)
 app.use('/api', memberRouter);

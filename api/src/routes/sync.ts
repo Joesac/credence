@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { requireApiKey } from '../middleware/auth';
 import { sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { TABLE_REGISTRY, type SyncableTableName } from '../../db/schema';
 
 const router = Router();
+
+router.use(requireApiKey);
 
 const SYNCABLE_TABLES = Object.keys(TABLE_REGISTRY) as SyncableTableName[];
 
