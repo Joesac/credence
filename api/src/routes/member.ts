@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import {
   members,
@@ -198,7 +198,9 @@ router.get('/members/me/dashboard', async (req, res, next) => {
 
 const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
+  offset: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  startDate: z.string().datetime().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -208,13 +210,17 @@ const paginationSchema = z.object({
 router.get('/members/me/deposits', async (req, res, next) => {
   try {
     const memberId = getMemberId(req);
-    const { page, limit } = paginationSchema.parse(req.query);
-    const offset = (page - 1) * limit;
+    const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(req.query);
+    const offset = requestedOffset ?? (page - 1) * limit;
+    const filters = [
+      eq(deposits.member_id, memberId),
+      ...(startDate ? [gte(deposits.date_created, new Date(startDate))] : []),
+    ];
 
     const [countResult] = await db
       .select({ total: sql<number>`COUNT(*)::int` })
       .from(deposits)
-      .where(eq(deposits.member_id, memberId));
+      .where(and(...filters));
 
     const rows = await db
       .select({
@@ -235,7 +241,7 @@ router.get('/members/me/deposits', async (req, res, next) => {
       .from(deposits)
       .leftJoin(members, eq(members.id, deposits.member_id))
       .leftJoin(users, eq(users.id, deposits.received_by))
-      .where(eq(deposits.member_id, memberId))
+      .where(and(...filters))
       .orderBy(desc(deposits.date_created))
       .limit(limit)
       .offset(offset);
@@ -251,6 +257,8 @@ router.get('/members/me/deposits', async (req, res, next) => {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      hasMore: offset + rows.length < total,
+      nextOffset: offset + rows.length,
     });
   } catch (err) {
     next(err);
@@ -264,13 +272,17 @@ router.get('/members/me/deposits', async (req, res, next) => {
 router.get('/members/me/withdrawals', async (req, res, next) => {
   try {
     const memberId = getMemberId(req);
-    const { page, limit } = paginationSchema.parse(req.query);
-    const offset = (page - 1) * limit;
+    const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(req.query);
+    const offset = requestedOffset ?? (page - 1) * limit;
+    const filters = [
+      eq(withdrawals.member_id, memberId),
+      ...(startDate ? [gte(withdrawals.date_created, new Date(startDate))] : []),
+    ];
 
     const [countResult] = await db
       .select({ total: sql<number>`COUNT(*)::int` })
       .from(withdrawals)
-      .where(eq(withdrawals.member_id, memberId));
+      .where(and(...filters));
 
     const rows = await db
       .select({
@@ -289,7 +301,7 @@ router.get('/members/me/withdrawals', async (req, res, next) => {
       .from(withdrawals)
       .leftJoin(members, eq(members.id, withdrawals.member_id))
       .leftJoin(users, eq(users.id, withdrawals.issuer_id))
-      .where(eq(withdrawals.member_id, memberId))
+      .where(and(...filters))
       .orderBy(desc(withdrawals.date_created))
       .limit(limit)
       .offset(offset);
@@ -305,6 +317,8 @@ router.get('/members/me/withdrawals', async (req, res, next) => {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      hasMore: offset + rows.length < total,
+      nextOffset: offset + rows.length,
     });
   } catch (err) {
     next(err);
