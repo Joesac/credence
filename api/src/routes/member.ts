@@ -332,14 +332,23 @@ router.get('/members/me/withdrawals', async (req, res, next) => {
 router.get('/members/me/loans', async (req, res, next) => {
   try {
     const memberId = getMemberId(req);
+    const { page, offset: requestedOffset, limit } = paginationSchema.parse(req.query);
+    const offset = requestedOffset ?? (page - 1) * limit;
+
+    const [countResult] = await db
+      .select({ total: sql<number>`COUNT(*)::int` })
+      .from(loans)
+      .where(eq(loans.member_id, memberId));
 
     const memberLoans = await db
       .select()
       .from(loans)
       .where(eq(loans.member_id, memberId))
-      .orderBy(desc(loans.date_created));
+      .orderBy(desc(loans.date_created))
+      .limit(limit)
+      .offset(offset);
 
-    const result = await Promise.all(
+    const data = await Promise.all(
       memberLoans.map(async (loan) => {
         const [repaidAgg] = await db
           .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
@@ -367,7 +376,16 @@ router.get('/members/me/loans', async (req, res, next) => {
       }),
     );
 
-    res.json(result);
+    const total = countResult?.total ?? 0;
+    res.json({
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasMore: offset + data.length < total,
+      nextOffset: offset + data.length,
+    });
   } catch (err) {
     next(err);
   }
