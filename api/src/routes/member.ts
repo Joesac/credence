@@ -400,16 +400,21 @@ router.get('/members/me/loans/:id', async (req, res, next) => {
     const memberId = getMemberId(req);
     const loanId = req.params.id;
 
-    const [loan] = await db
-      .select()
+    const [row] = await db
+      .select({
+        loan: loans,
+        issuer: { id: users.id, fullname: users.fullname, accountNumber: sql<string>`NULL` },
+      })
       .from(loans)
+      .leftJoin(users, eq(users.id, loans.issuer_id))
       .where(and(eq(loans.id, loanId), eq(loans.member_id, memberId)));
 
-    if (!loan) {
+    if (!row) {
       res.status(404).json({ code: 'NOT_FOUND', message: 'Loan not found.' });
       return;
     }
 
+    const loan = row.loan;
     const [repaidAgg] = await db
       .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
       .from(loan_repayments)
@@ -429,6 +434,7 @@ router.get('/members/me/loans/:id', async (req, res, next) => {
       computedInterestAmount: interestAmount,
       outstandingBalance,
       totalRepaid,
+      issuer: row.issuer,
     });
   } catch (err) {
     next(err);
@@ -456,15 +462,20 @@ router.get('/members/me/loans/:id/repayments', async (req, res, next) => {
     }
 
     const repayments = await db
-      .select()
+      .select({
+        repayment: loan_repayments,
+        receiver: { id: users.id, fullname: users.fullname },
+      })
       .from(loan_repayments)
+      .leftJoin(users, eq(users.id, loan_repayments.receiver_id))
       .where(eq(loan_repayments.loan_id, loanId))
       .orderBy(desc(loan_repayments.date_created));
 
     res.json(
       repayments.map((r) => ({
-        ...r,
-        amount: toNumber(r.amount),
+        ...r.repayment,
+        amount: toNumber(r.repayment.amount),
+        receiver: r.receiver,
       })),
     );
   } catch (err) {
