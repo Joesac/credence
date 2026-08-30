@@ -21,8 +21,6 @@ export class AuditLogsComponent implements OnInit {
 
   protected readonly auditLogs = signal<AuditLog[]>([]);
   protected readonly isLoading = signal(false);
-  protected readonly currentPage = signal(1);
-  protected readonly pageSize = signal(15);
 
   protected readonly tableConfig: ColumnDef<AuditLog>[] = [
     { key: 'actorName', header: 'Actor' },
