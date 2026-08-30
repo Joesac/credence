@@ -1,5 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
+import { AuthService } from '../pages/auth/services/auth-service';
 import { CloudSyncConfig } from '@interfaces/sync.interface';
 
 export const SETTING_API_URL = 'api_base_url';
@@ -13,6 +14,15 @@ export const SETTING_LAST_SYNC_AT = 'last_sync_at';
 @Service()
 export class CloudSyncConfigService {
   private readonly ipcBridge = inject(IpcBridgeService);
+  private readonly authService = inject(AuthService);
+
+  private getActorId(): string {
+    const actorId = this.authService.getUserId();
+    if (!actorId) {
+      throw new Error('NOT_AUTHENTICATED');
+    }
+    return actorId;
+  }
 
   async getConfig(): Promise<CloudSyncConfig> {
     const [apiUrl, apiKey] = await Promise.all([
@@ -23,10 +33,19 @@ export class CloudSyncConfigService {
   }
 
   async saveConfig(config: CloudSyncConfig): Promise<void> {
-    await Promise.all([
-      this.ipcBridge.executeIPC((api) => api.setSetting({ key: SETTING_API_URL, value: config.apiUrl ?? '' })),
-      this.ipcBridge.executeIPC((api) => api.setSetting({ key: SETTING_API_KEY, value: config.apiKey ?? '' })),
-    ]);
+    await this.ipcBridge.executeIPC((api) =>
+      api.saveSyncConfig({
+        actorId: this.getActorId(),
+        apiUrl: config.apiUrl ?? '',
+        apiKey: config.apiKey ?? '',
+      })
+    );
+  }
+
+  async clearConfig(): Promise<void> {
+    await this.ipcBridge.executeIPC((api) =>
+      api.clearSyncConfig({ actorId: this.getActorId() })
+    );
   }
 
   async getLastSyncAt(): Promise<string | null> {

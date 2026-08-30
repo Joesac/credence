@@ -1,6 +1,17 @@
 import { UserSeedPayload } from './types';
 
 /**
+ * Shared role constants for the desktop application.
+ * Use these for any role checks or defaults to avoid hardcoding the strings.
+ */
+export const USER_ROLES = {
+  Admin: 'Admin',
+  Regular: 'Regular',
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+/**
  * Bridge constants consumed by preload and renderer integration.
  * These values define how Electron APIs are exposed into the renderer context.
  */
@@ -105,7 +116,7 @@ export const DEFAULT_ADMIN_USER: UserSeedPayload = {
   fullname: 'Super Admin',
   username: 'admin',
   password: 'Joesac123?',
-  role: 'Admin',
+  role: USER_ROLES.Admin,
 };
 
 /**
@@ -149,9 +160,12 @@ export const IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS = 'get-fund-distribution-st
 export const IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS = 'get-global-fund-distribution-stats';
 export const IPC_CHANNEL_GET_VERSION = 'get-version';
 export const IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD = 'admin-reset-user-password';
+export const IPC_CHANNEL_GET_AUDIT_LOGS = 'get-audit-logs';
 export const IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD = 'set-sync-admin-password';
 export const IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD = 'verify-sync-admin-password';
 export const IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS = 'get-sync-admin-password-status';
+export const IPC_CHANNEL_SAVE_SYNC_CONFIG = 'save-sync-config';
+export const IPC_CHANNEL_CLEAR_SYNC_CONFIG = 'clear-sync-config';
 
 /**
  * Sync IPC channels for cloud sync functionality.

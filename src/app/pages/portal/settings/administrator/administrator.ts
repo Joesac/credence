@@ -9,5 +9,6 @@ import { ResetSyncPassword } from './reset-sync-password/reset-sync-password';
   imports: [MatTabsModule, ResetUserPassword, ResetSyncPassword],
   templateUrl: './administrator.html',
   styleUrl: './administrator.scss',
+  host: { 'class': 'w-full flex justify-center' },
 })
 export class Administrator {}

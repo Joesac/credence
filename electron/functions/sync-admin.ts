@@ -3,6 +3,7 @@ import { createAuditLog } from './audit';
 import { createIpcError } from '../errors';
 import { hashPassword, verifyPassword } from './utils';
 import { fetchUserById } from './users';
+import { USER_ROLES } from '../constants';
 import { SetSyncAdminPasswordPayload } from '../types';
 
 export const SYNC_ADMIN_PASSWORD_KEY = 'sync_admin_password_hash';
@@ -28,7 +29,7 @@ export function verifySyncAdminPassword(db: Database.Database, password: string)
 
 export function setSyncAdminPassword(db: Database.Database, payload: SetSyncAdminPasswordPayload) {
   const actor = fetchUserById(db, payload.actorId);
-  if (!actor || actor.role !== 'Admin') {
+  if (!actor || actor.role !== USER_ROLES.Admin) {
     throw createIpcError('FORBIDDEN', 'Only administrators can manage the cloud sync password.');
   }
 

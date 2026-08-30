@@ -1,8 +1,20 @@
 <section class="card mt-6 max-width">
   <header class="mb-8 flex items-start justify-between">
-    <div>
-      <h1 class="text-2xl font-semibold text-text-main">Cloud Sync</h1>
-      <p class="text-text-muted mt-1 text-sm">Sync your local data to the cloud database. Data flows one-way from this device to the cloud.</p>
+    <div class="flex items-start gap-3">
+      @if (isEditingConfig()) {
+        <button
+          type="button"
+          matIconButton
+          (click)="onBack()"
+          aria-label="Back to cloud sync status"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+      }
+      <div>
+        <h1 class="text-2xl font-semibold text-text-main">Cloud Sync</h1>
+        <p class="text-text-muted mt-1 text-sm">Sync your local data to the cloud database. Data flows one-way from this device to the cloud.</p>
+      </div>
     </div>
     @if (isConfigured()) {
       <div class="flex gap-3 shrink-0">

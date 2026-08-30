@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { form, FormField, required, validate } from '@angular/forms/signals';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
+import { USER_ROLES } from '@constants/roles.const';
 import { AuthService } from '../../../../auth/services/auth-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 
@@ -35,14 +36,14 @@ export class AddUserDialogComponent {
   protected readonly isSubmitting = signal(false);
 
   protected readonly roleOptions = [
-    { label: 'Regular', value: 'Regular' },
-    { label: 'Admin', value: 'Admin' },
+    { label: USER_ROLES.Regular, value: USER_ROLES.Regular },
+    { label: USER_ROLES.Admin, value: USER_ROLES.Admin },
   ];
 
   private readonly INITIAL_DATA: AddUserData = {
     fullname: '',
     username: '',
-    role: 'Regular',
+    role: USER_ROLES.Regular,
     password: '',
     confirmPassword: '',
   };

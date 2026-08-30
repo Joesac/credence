@@ -110,6 +110,7 @@ export const routes: Routes = [
         {
           path: 'sync',
           loadComponent: () => import('./pages/portal/settings/sync/sync').then(m => m.SyncComponent),
+          canActivate: [adminGuard],
           data: { breadcrumb: ['Cloud Sync'] }
         },
         {
@@ -117,6 +118,12 @@ export const routes: Routes = [
           loadComponent: () => import('./pages/portal/settings/administrator/administrator').then(m => m.Administrator),
           canActivate: [adminGuard],
           data: { breadcrumb: ['Administrator'] }
+        },
+        {
+          path: 'audit-logs',
+          loadComponent: () => import('./pages/portal/settings/audit-logs/audit-logs').then(m => m.AuditLogsComponent),
+          canActivate: [adminGuard],
+          data: { breadcrumb: ['Audit Logs'] }
         }
       ] 
     }

@@ -13,6 +13,9 @@ Credence is a desktop financial management application built with Angular and El
 - **Fund Distributions** — Allocate funds and view distribution analytics.
 - **Daily Reports** — View summary cards and paginated deposits/withdrawals for any date.
 - **User Management** — Add users, manage roles and statuses, verify passwords, and handle idle session warnings.
+- **Cloud Sync** — Admin-only cloud sync configuration protected by a separate sync admin password.
+- **Audit Logging** — Track administrative and security events such as user status changes, role updates, password resets, and cloud sync configuration saves.
+- **Audit Logs View** — A dedicated, paginated admin page for reviewing recorded audit events.
 - **Theming** — Dark/light mode support with Tailwind CSS and Angular Material.
 - **Splash Screen** — Native, frameless splash window with the brand logo and a loading indicator shown while Angular loads.
 - **Collapsible Sidebar** — Left navigation can be collapsed and reopened from the topbar.

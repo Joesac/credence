@@ -59,9 +59,12 @@ import {
   IPC_CHANNEL_GET_SETTING,
   IPC_CHANNEL_SET_SETTING,
   IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD,
+  IPC_CHANNEL_GET_AUDIT_LOGS,
   IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD,
   IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD,
   IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS,
+  IPC_CHANNEL_SAVE_SYNC_CONFIG,
+  IPC_CHANNEL_CLEAR_SYNC_CONFIG,
   PRODUCTION_DATABASE_FILENAME,
   DEFAULT_ADMIN_USER_ID,
 } from './constants';
@@ -82,6 +85,7 @@ import {
   verifySyncAdminPassword,
   setSyncAdminPassword,
 } from './functions/sync-admin';
+import { fetchAuditLogs } from './functions/audit';
 import {
   fetchMembers,
   createMember,
@@ -156,6 +160,8 @@ import {
   getSyncStats,
   getSetting,
   setSetting,
+  saveSyncConfig,
+  clearSyncConfig,
 } from './functions/sync';
 import { runMigrations } from './migration';
 import { registerIpcHandler } from './ipc';
@@ -439,6 +445,8 @@ registerIpcHandler(IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD, async (payload: { acto
   return adminResetUserPassword(db, payload);
 });
 
+registerIpcHandler(IPC_CHANNEL_GET_AUDIT_LOGS, async () => fetchAuditLogs(db));
+
 registerIpcHandler(IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD, async (payload: { password: string }) => {
   if (!payload?.password) {
     throw new Error('Missing password payload');
@@ -504,6 +512,14 @@ registerIpcHandler(IPC_CHANNEL_GET_SETTING, async (payload: { key: string }) =>
 
 registerIpcHandler(IPC_CHANNEL_SET_SETTING, async (payload: { key: string; value: string }) =>
   setSetting(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_SAVE_SYNC_CONFIG, async (payload: { actorId: string; apiUrl: string; apiKey: string }) =>
+  saveSyncConfig(db, payload)
+);
+
+registerIpcHandler(IPC_CHANNEL_CLEAR_SYNC_CONFIG, async (payload: { actorId: string }) =>
+  clearSyncConfig(db, payload)
 );
 
 app.whenReady().then(() => {

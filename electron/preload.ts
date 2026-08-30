@@ -45,9 +45,12 @@ import {
   IPC_CHANNEL_GET_SETTING,
   IPC_CHANNEL_SET_SETTING,
   IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD,
+  IPC_CHANNEL_GET_AUDIT_LOGS,
   IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD,
   IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD,
   IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS,
+  IPC_CHANNEL_SAVE_SYNC_CONFIG,
+  IPC_CHANNEL_CLEAR_SYNC_CONFIG,
 } from './constants';
 
 contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
@@ -69,6 +72,7 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
   verifyPassword: (payload: { userId: string; password: string }) => ipcRenderer.invoke(IPC_CHANNEL_VERIFY_PASSWORD, payload),
   toggleUserStatus: (payload: { userId: string; actorId: string }) => ipcRenderer.invoke(IPC_CHANNEL_TOGGLE_USER_STATUS, payload),
   adminResetUserPassword: (payload: { actorId: string; actorPassword: string; targetUserId: string; newPassword: string }) => ipcRenderer.invoke(IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD, payload),
+  getAuditLogs: () => ipcRenderer.invoke(IPC_CHANNEL_GET_AUDIT_LOGS),
 
   /**
    * Members bridge
@@ -144,4 +148,6 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
   verifySyncAdminPassword: (payload: { password: string }) => ipcRenderer.invoke(IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD, payload),
   getSyncAdminPasswordStatus: () => ipcRenderer.invoke(IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS),
   setSyncAdminPassword: (payload: { actorId: string; currentPassword?: string; newPassword: string }) => ipcRenderer.invoke(IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD, payload),
+  saveSyncConfig: (payload: { actorId: string; apiUrl: string; apiKey: string }) => ipcRenderer.invoke(IPC_CHANNEL_SAVE_SYNC_CONFIG, payload),
+  clearSyncConfig: (payload: { actorId: string }) => ipcRenderer.invoke(IPC_CHANNEL_CLEAR_SYNC_CONFIG, payload),
 });

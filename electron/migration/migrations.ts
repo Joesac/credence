@@ -157,11 +157,13 @@ const createAppSettingsTable: Migration = {
   },
 };
 
+import { USER_ROLES } from '../constants';
+
 const addUsersRoleColumn: Migration = {
   id: '20260830_add_users_role_column',
-  description: "Add role column to users table with default 'Regular'",
+  description: `Add role column to users table with default '${USER_ROLES.Regular}'`,
   run: (db: Database.Database) => {
-    addColumnIfMissing(db, 'users', 'role', "role TEXT NOT NULL DEFAULT 'Regular'");
+    addColumnIfMissing(db, 'users', 'role', `role TEXT NOT NULL DEFAULT '${USER_ROLES.Regular}'`);
   },
 };
 

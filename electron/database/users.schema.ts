@@ -1,3 +1,5 @@
+import { USER_ROLES } from '../constants';
+
 export const CREATE_USERS_TABLE = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
@@ -5,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password TEXT NOT NULL,
   is_disabled INTEGER NOT NULL DEFAULT 0,
-  role TEXT NOT NULL DEFAULT 'Regular',
+  role TEXT NOT NULL DEFAULT '${USER_ROLES.Regular}',
   last_login TEXT,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),
   date_updated TEXT NOT NULL DEFAULT (datetime('now')),

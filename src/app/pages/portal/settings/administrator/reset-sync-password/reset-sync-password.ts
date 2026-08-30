@@ -89,7 +89,7 @@ export class ResetSyncPassword implements OnInit {
           ? 'Cloud sync password updated successfully.'
           : 'Cloud sync password set successfully.',
       });
-      this.resetModel.set(this.INITIAL_DATA);
+      this.resetForm().reset({ ...this.INITIAL_DATA });
       this.isSyncPasswordSet.set(true);
     } catch (error) {
       const ipcError = this.authService.extractIpcError(error);

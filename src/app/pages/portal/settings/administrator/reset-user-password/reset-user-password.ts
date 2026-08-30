@@ -86,7 +86,7 @@ export class ResetUserPassword implements OnInit {
         newPassword,
       });
       this.toastService.success({ message: 'Password reset successfully.' });
-      this.resetModel.set(this.INITIAL_DATA);
+      this.resetForm().reset({ ...this.INITIAL_DATA });
     } catch (error) {
       const ipcError = this.authService.extractIpcError(error);
       this.toastService.error({

@@ -1,4 +1,6 @@
-export type UserRole = 'Admin' | 'Regular';
+import { USER_ROLES } from '@constants/roles.const';
+
+export type UserRole = typeof USER_ROLES.Admin | typeof USER_ROLES.Regular;
 
 export interface User {
   id: string;

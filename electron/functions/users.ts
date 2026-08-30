@@ -4,6 +4,7 @@ import {
   DEFAULT_ADMIN_USER_ID,
   DEFAULT_ADMIN_USER,
   USER_BASE_COLUMNS_WITH_PASSWORD,
+  USER_ROLES,
 } from '../constants';
 import {
   CreateUserPayload,
@@ -53,7 +54,7 @@ export function createUser(db: Database.Database, payload: CreateUserPayload) {
 
   const id = randomUUID();
   const passwordHash = hashPassword(payload.password);
-  const role = payload.role ?? 'Regular';
+  const role = payload.role ?? USER_ROLES.Regular;
   const insert = db.prepare(`
     INSERT INTO users (id, fullname, username, password, role)
     VALUES (@id, @fullname, @username, @password, @role)
@@ -170,13 +171,13 @@ export function seedDefaultAdminUser(db: Database.Database): void {
     return;
   }
 
-  if (existingUser.role !== 'Admin') {
+  if (existingUser.role !== USER_ROLES.Admin) {
     const update = db.prepare(`
       UPDATE users
-      SET role = 'Admin', is_synced = 0, date_updated = datetime('now')
+      SET role = @role, is_synced = 0, date_updated = datetime('now')
       WHERE id = @id
     `);
-    update.run({ id: existingUser.id });
+    update.run({ id: existingUser.id, role: USER_ROLES.Admin });
   }
 }
 
@@ -202,7 +203,7 @@ export function loginUser(db: Database.Database, payload: LoginUserPayload) {
 
 export function toggleUserStatus(db: Database.Database, payload: ToggleUserStatusPayload) {
   const actor = fetchUserById(db, payload.actorId);
-  if (!actor || actor.role !== 'Admin') {
+  if (!actor || actor.role !== USER_ROLES.Admin) {
     throw createIpcError('FORBIDDEN', 'Only administrators can change user status.');
   }
 
@@ -230,7 +231,7 @@ export function toggleUserStatus(db: Database.Database, payload: ToggleUserStatu
 export function adminResetUserPassword(db: Database.Database, payload: AdminResetUserPasswordPayload) {
   const actorStmt = db.prepare(`SELECT * FROM users WHERE id = @id LIMIT 1`);
   const actor = actorStmt.get({ id: payload.actorId }) as DbUserRow | undefined;
-  if (!actor || actor.role !== 'Admin') {
+  if (!actor || actor.role !== USER_ROLES.Admin) {
     throw createIpcError('FORBIDDEN', 'Only administrators can reset passwords.');
   }
 
@@ -255,7 +256,7 @@ export function adminResetUserPassword(db: Database.Database, payload: AdminRese
     actorId: payload.actorId,
     targetId: payload.targetUserId,
     action: 'USER_PASSWORD_RESET',
-    details: JSON.stringify({ target_was_admin: target.role === 'Admin' }),
+    details: JSON.stringify({ target_was_admin: target.role === USER_ROLES.Admin }),
   });
 
   return fetchUserById(db, payload.targetUserId);

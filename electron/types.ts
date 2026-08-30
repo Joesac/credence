@@ -55,6 +55,16 @@ export interface VerifySyncAdminPasswordPayload {
   password: string;
 }
 
+export interface SaveSyncConfigPayload {
+  actorId: string;
+  apiUrl: string;
+  apiKey: string;
+}
+
+export interface ClearSyncConfigPayload {
+  actorId: string;
+}
+
 export interface UpdateUserPayload {
   id: string;
   actorId?: string;

@@ -25,6 +25,7 @@ import {
 } from '@interfaces/loan.interface';
 import { DashboardData, DailySummary } from '@interfaces/dashboard.interface';
 import { FundDistributionSummary, GlobalFundDistributionStats, CreateFundDistributionPayload } from '@interfaces/fund-distribution.interface';
+import { AuditLog } from '@interfaces/audit-log.interface';
 
 export interface ElectronAPI {
   getDashboardData: () => Promise<DashboardData>;
@@ -38,6 +39,7 @@ export interface ElectronAPI {
   verifyPassword: (payload: { userId: string; password: string }) => Promise<{ valid: boolean }>;
   toggleUserStatus: (payload: { userId: string; actorId: string }) => Promise<User>;
   adminResetUserPassword: (payload: { actorId: string; actorPassword: string; targetUserId: string; newPassword: string }) => Promise<User>;
+  getAuditLogs: () => Promise<AuditLog[]>;
   getMembers: (payload: PaginationRequest) => Promise<PaginatedResponse<Member>>;
   getMemberById: (payload: { id: string }) => Promise<any>;
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => Promise<any>;
@@ -73,6 +75,8 @@ export interface ElectronAPI {
   verifySyncAdminPassword: (payload: { password: string }) => Promise<{ valid: boolean }>;
   getSyncAdminPasswordStatus: () => Promise<{ isSet: boolean }>;
   setSyncAdminPassword: (payload: { actorId: string; currentPassword?: string; newPassword: string }) => Promise<{ success: boolean }>;
+  saveSyncConfig: (payload: { actorId: string; apiUrl: string; apiKey: string }) => Promise<{ success: boolean }>;
+  clearSyncConfig: (payload: { actorId: string }) => Promise<{ success: boolean }>;
 }
 
 declare global {

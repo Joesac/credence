@@ -45,6 +45,7 @@ export class SyncComponent implements OnInit {
   protected readonly syncStats = signal<SyncStats>({});
   protected readonly lastSyncAt = signal<string | null>(null);
   protected readonly isConfigured = signal(false);
+  protected readonly isEditingConfig = signal(false);
   protected readonly isLoading = signal(true);
   protected readonly isSavingConfig = signal(false);
   protected readonly lastResult = signal<SyncResult | null>(null);
@@ -70,6 +71,7 @@ export class SyncComponent implements OnInit {
       ]);
 
       this.isConfigured.set(!!config.apiUrl && !!config.apiKey);
+      this.isEditingConfig.set(false);
       this.syncStats.set(stats);
       this.lastSyncAt.set(lastSync);
 
@@ -106,6 +108,7 @@ export class SyncComponent implements OnInit {
         apiKey: payload.apiKey.trim(),
       });
       this.isConfigured.set(true);
+      this.isEditingConfig.set(false);
       this.toastService.success({ message: 'Cloud sync configuration saved.' });
     } catch (error) {
       this.toastService.error({ message: 'Unable to save configuration. Please try again.' });
@@ -170,6 +173,7 @@ export class SyncComponent implements OnInit {
       const status = await this.authService.getSyncAdminPasswordStatus();
       if (!status.isSet) {
         this.isConfigured.set(false);
+        this.isEditingConfig.set(true);
         return;
       }
     } catch {
@@ -185,15 +189,23 @@ export class SyncComponent implements OnInit {
     dialogRef.afterClosed().subscribe((verified) => {
       if (verified) {
         this.isConfigured.set(false);
+        this.isEditingConfig.set(true);
       }
     });
   }
 
+  protected onBack(): void {
+    this.isConfigured.set(true);
+    this.isEditingConfig.set(false);
+    void this.loadState();
+  }
+
   protected async onClearConfig(): Promise<void> {
     try {
-      await this.configService.saveConfig({ apiUrl: '', apiKey: '' });
+      await this.configService.clearConfig();
       this.configModel.set({ apiUrl: '', apiKey: '' });
       this.isConfigured.set(false);
+      this.isEditingConfig.set(false);
       this.toastService.success({ message: 'Cloud sync configuration cleared.' });
     } catch (error) {
       this.toastService.error({ message: 'Unable to clear configuration. Please try again.' });
