@@ -5,6 +5,7 @@ export interface UserSeedPayload {
   fullname: string;
   username: string;
   password: string;
+  role?: string;
 }
 
 /**
@@ -14,6 +15,8 @@ export interface CreateUserPayload {
   fullname: string;
   username: string;
   password: string;
+  role?: string;
+  actorId?: string;
 }
 
 export interface LoginUserPayload {
@@ -30,13 +33,37 @@ export interface LogoutUserPayload {
   userId: string;
 }
 
+export interface ToggleUserStatusPayload {
+  userId: string;
+  actorId: string;
+}
+
+export interface AdminResetUserPasswordPayload {
+  actorId: string;
+  actorPassword: string;
+  targetUserId: string;
+  newPassword: string;
+}
+
+export interface SetSyncAdminPasswordPayload {
+  actorId: string;
+  currentPassword?: string;
+  newPassword: string;
+}
+
+export interface VerifySyncAdminPasswordPayload {
+  password: string;
+}
+
 export interface UpdateUserPayload {
   id: string;
+  actorId?: string;
   currentPassword?: string;
   fullname?: string;
   username?: string;
   password?: string;
   isDisabled?: number | boolean;
+  role?: string;
 }
 
 export interface CreateMemberPayload {
@@ -218,6 +245,7 @@ export type DbUserRow = {
   username: string;
   password: string;
   is_disabled: number;
+  role: string;
   last_login: string | null;
   date_created: string;
   date_updated: string;

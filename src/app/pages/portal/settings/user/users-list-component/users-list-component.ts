@@ -52,6 +52,7 @@ export class UsersListComponent implements OnInit {
   protected readonly tableConfig: ColumnDef<User>[] = [
     { key: 'fullname', header: 'Name' },
     { key: 'username', header: 'Username' },
+    { key: 'role', header: 'Role' },
     { 
       key: 'last_login', 
       header: 'Last Login',

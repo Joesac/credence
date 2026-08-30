@@ -13,7 +13,7 @@
       </div>
 
     <nav class="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto min-h-0">
-      @for (item of menu; track item.id) {
+      @for (item of menu(); track item.id) {
         @let isOpen = isSubmenuOpen(item);
         <div class="flex flex-col">
           @if (item.children?.length) {

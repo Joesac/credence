@@ -12,6 +12,7 @@ import {
   CREATE_LOAN_REPAYMENTS_TABLE,
   CREATE_FUND_DISTRIBUTIONS_TABLE,
   CREATE_APP_SETTINGS_TABLE,
+  CREATE_AUDIT_LOGS_TABLE,
 } from './database/index';
 import {
   DEVELOPMENT_DATABASE_FILENAME,
@@ -57,6 +58,10 @@ import {
   IPC_CHANNEL_GET_SYNC_STATS,
   IPC_CHANNEL_GET_SETTING,
   IPC_CHANNEL_SET_SETTING,
+  IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD,
+  IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD,
+  IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD,
+  IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS,
   PRODUCTION_DATABASE_FILENAME,
   DEFAULT_ADMIN_USER_ID,
 } from './constants';
@@ -70,7 +75,13 @@ import {
   updateUser,
   verifyUserPassword,
   toggleUserStatus,
+  adminResetUserPassword,
 } from './functions/users';
+import {
+  getSyncAdminPasswordStatus,
+  verifySyncAdminPassword,
+  setSyncAdminPassword,
+} from './functions/sync-admin';
 import {
   fetchMembers,
   createMember,
@@ -187,6 +198,7 @@ function initDatabase(): void {
   db.exec(CREATE_LOAN_REPAYMENTS_TABLE);
   db.exec(CREATE_FUND_DISTRIBUTIONS_TABLE);
   db.exec(CREATE_APP_SETTINGS_TABLE);
+  db.exec(CREATE_AUDIT_LOGS_TABLE);
   runMigrations(db);
 
   seedDefaultAdminUser(db);
@@ -413,12 +425,36 @@ registerIpcHandler(IPC_CHANNEL_GET_LOAN_REPAYMENTS_BY_LOAN_ID, async (payload: {
   return fetchLoanRepaymentsByLoanId(db, payload.loanId, payload);
 });
 
-registerIpcHandler(IPC_CHANNEL_TOGGLE_USER_STATUS, async (payload: { userId: string } | string) => {
-  const userId = typeof payload === 'string' ? payload : payload?.userId;
-  if (!userId) {
-    throw new Error('Missing userId payload');
+registerIpcHandler(IPC_CHANNEL_TOGGLE_USER_STATUS, async (payload: { userId: string; actorId: string }) => {
+  if (!payload?.userId || !payload?.actorId) {
+    throw new Error('Missing userId or actorId payload');
   }
-  return toggleUserStatus(db, userId);
+  return toggleUserStatus(db, payload);
+});
+
+registerIpcHandler(IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD, async (payload: { actorId: string; actorPassword: string; targetUserId: string; newPassword: string }) => {
+  if (!payload?.actorId || !payload?.actorPassword || !payload?.targetUserId || !payload?.newPassword) {
+    throw new Error('Missing required password reset payload');
+  }
+  return adminResetUserPassword(db, payload);
+});
+
+registerIpcHandler(IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD, async (payload: { password: string }) => {
+  if (!payload?.password) {
+    throw new Error('Missing password payload');
+  }
+  return verifySyncAdminPassword(db, payload.password);
+});
+
+registerIpcHandler(IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS, async () =>
+  getSyncAdminPasswordStatus(db)
+);
+
+registerIpcHandler(IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD, async (payload: { actorId: string; currentPassword?: string; newPassword: string }) => {
+  if (!payload?.actorId || !payload?.newPassword) {
+    throw new Error('Missing required sync admin password payload');
+  }
+  return setSyncAdminPassword(db, payload);
 });
 
 registerIpcHandler(IPC_CHANNEL_GET_DASHBOARD_DATA, async () =>

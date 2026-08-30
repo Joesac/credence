@@ -32,6 +32,7 @@ export const USER_BASE_COLUMNS = `
   fullname,
   username,
   is_disabled,
+  role,
   last_login,
   date_created,
   date_updated,
@@ -104,6 +105,7 @@ export const DEFAULT_ADMIN_USER: UserSeedPayload = {
   fullname: 'Super Admin',
   username: 'admin',
   password: 'Joesac123?',
+  role: 'Admin',
 };
 
 /**
@@ -146,6 +148,10 @@ export const IPC_CHANNEL_CREATE_FUND_DISTRIBUTION = 'create-fund-distribution';
 export const IPC_CHANNEL_GET_FUND_DISTRIBUTION_STATS = 'get-fund-distribution-stats';
 export const IPC_CHANNEL_GET_GLOBAL_FUND_DISTRIBUTION_STATS = 'get-global-fund-distribution-stats';
 export const IPC_CHANNEL_GET_VERSION = 'get-version';
+export const IPC_CHANNEL_ADMIN_RESET_USER_PASSWORD = 'admin-reset-user-password';
+export const IPC_CHANNEL_SET_SYNC_ADMIN_PASSWORD = 'set-sync-admin-password';
+export const IPC_CHANNEL_VERIFY_SYNC_ADMIN_PASSWORD = 'verify-sync-admin-password';
+export const IPC_CHANNEL_GET_SYNC_ADMIN_PASSWORD_STATUS = 'get-sync-admin-password-status';
 
 /**
  * Sync IPC channels for cloud sync functionality.

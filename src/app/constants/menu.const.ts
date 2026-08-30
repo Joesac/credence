@@ -53,6 +53,7 @@ export const MENU: Menu[] = [
       { id: 'user-details', label: 'User Details', isActive: false },
       { id: 'users-list', label: 'Users', isActive: false },
       { id: 'sync', label: 'Cloud Sync', isActive: false },
+      { id: 'administrator', label: 'Administrator', isActive: false, role: 'Admin' },
     ]
   },
 ];

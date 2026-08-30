@@ -13,9 +13,12 @@ import {
   SanitizedUser,
   UpdateUserPayload,
   VerifyPasswordPayload,
+  ToggleUserStatusPayload,
+  AdminResetUserPasswordPayload,
 } from '../types';
 import { createIpcError } from '../errors';
 import { hashPassword, verifyPassword } from './utils';
+import { createAuditLog } from './audit';
 
 function sanitizeUser(row: DbUserRow): SanitizedUser {
   const { password: _password, ...rest } = row;
@@ -50,9 +53,10 @@ export function createUser(db: Database.Database, payload: CreateUserPayload) {
 
   const id = randomUUID();
   const passwordHash = hashPassword(payload.password);
+  const role = payload.role ?? 'Regular';
   const insert = db.prepare(`
-    INSERT INTO users (id, fullname, username, password)
-    VALUES (@id, @fullname, @username, @password)
+    INSERT INTO users (id, fullname, username, password, role)
+    VALUES (@id, @fullname, @username, @password, @role)
   `);
 
   insert.run({
@@ -60,6 +64,14 @@ export function createUser(db: Database.Database, payload: CreateUserPayload) {
     fullname: payload.fullname,
     username: payload.username,
     password: passwordHash,
+    role,
+  });
+
+  createAuditLog(db, {
+    actorId: payload.actorId ?? id,
+    targetId: id,
+    action: 'USER_CREATED',
+    details: JSON.stringify({ role }),
   });
 
   const select = db.prepare(
@@ -112,6 +124,11 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
     params.is_disabled = typeof payload.isDisabled === 'boolean' ? (payload.isDisabled ? 1 : 0) : payload.isDisabled;
   }
 
+  if (payload.role !== undefined) {
+    fields.push('role = @role');
+    params.role = payload.role;
+  }
+
   if (!fields.length) {
     return fetchUserById(db, payload.id);
   }
@@ -125,6 +142,16 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
   if (result.changes === 0) {
     return null;
   }
+
+  if (payload.role !== undefined && record.role !== payload.role) {
+    createAuditLog(db, {
+      actorId: payload.actorId ?? payload.id,
+      targetId: payload.id,
+      action: 'USER_ROLE_CHANGED',
+      details: JSON.stringify({ old_role: record.role, new_role: payload.role }),
+    });
+  }
+
   return fetchUserById(db, payload.id);
 }
 
@@ -165,8 +192,13 @@ export function loginUser(db: Database.Database, payload: LoginUserPayload) {
   return sanitizeUser(record);
 }
 
-export function toggleUserStatus(db: Database.Database, userId: string) {
-  const user = fetchUserById(db, userId);
+export function toggleUserStatus(db: Database.Database, payload: ToggleUserStatusPayload) {
+  const actor = fetchUserById(db, payload.actorId);
+  if (!actor || actor.role !== 'Admin') {
+    throw createIpcError('FORBIDDEN', 'Only administrators can change user status.');
+  }
+
+  const user = fetchUserById(db, payload.userId);
   if (!user) {
     throw createIpcError('USER_NOT_FOUND', 'The user account could not be located.');
   }
@@ -175,9 +207,50 @@ export function toggleUserStatus(db: Database.Database, userId: string) {
   const stmt = db.prepare(`
     UPDATE users SET is_disabled = @newStatus, is_synced = 0, date_updated = datetime('now') WHERE id = @id
   `);
-  stmt.run({ id: userId, newStatus });
+  stmt.run({ id: payload.userId, newStatus });
 
-  return fetchUserById(db, userId);
+  createAuditLog(db, {
+    actorId: payload.actorId,
+    targetId: payload.userId,
+    action: newStatus === 1 ? 'USER_DISABLED' : 'USER_ENABLED',
+    details: JSON.stringify({ previous_status: user.is_disabled ? 'disabled' : 'active' }),
+  });
+
+  return fetchUserById(db, payload.userId);
+}
+
+export function adminResetUserPassword(db: Database.Database, payload: AdminResetUserPasswordPayload) {
+  const actorStmt = db.prepare(`SELECT * FROM users WHERE id = @id LIMIT 1`);
+  const actor = actorStmt.get({ id: payload.actorId }) as DbUserRow | undefined;
+  if (!actor || actor.role !== 'Admin') {
+    throw createIpcError('FORBIDDEN', 'Only administrators can reset passwords.');
+  }
+
+  const target = fetchUserById(db, payload.targetUserId);
+  if (!target) {
+    throw createIpcError('USER_NOT_FOUND', 'The user account could not be located.');
+  }
+
+  if (!payload.actorPassword || !verifyPassword(payload.actorPassword, actor.password)) {
+    throw createIpcError('INVALID_ACTOR_PASSWORD', 'Your administrator password is incorrect.');
+  }
+
+  const update = db.prepare(`
+    UPDATE users SET password = @password, is_synced = 0, date_updated = datetime('now') WHERE id = @id
+  `);
+  update.run({
+    id: payload.targetUserId,
+    password: hashPassword(payload.newPassword),
+  });
+
+  createAuditLog(db, {
+    actorId: payload.actorId,
+    targetId: payload.targetUserId,
+    action: 'USER_PASSWORD_RESET',
+    details: JSON.stringify({ target_was_admin: target.role === 'Admin' }),
+  });
+
+  return fetchUserById(db, payload.targetUserId);
 }
 
 export function logoutUser(db: Database.Database, payload: LogoutUserPayload) {

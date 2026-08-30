@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, effect } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MENU } from '@constants/menu.const';
 import { Menu } from '@interfaces/menu.interface';
@@ -11,6 +11,7 @@ import { IdleService } from '@core/services/idle-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 import { AppService } from '@core/services/app';
 import { AuthService } from '../auth/services/auth-service';
+import { AuthUser } from '@interfaces/user.interface';
 import { LOGIN_ROUTE } from '@constants/routes.const';
 import { Subscription } from 'rxjs';
 import { SessionWarningModal } from '@core/components/session-warning-modal/session-warning-modal';
@@ -29,7 +30,8 @@ export class Portal implements OnInit, OnDestroy {
   protected readonly rightSidebarService = inject(RightSidebarService);
   protected readonly app = inject(AppService);
   protected readonly expandedSections = signal<Record<string, boolean>>({});
-  protected readonly menu = MENU;
+  protected readonly activeUser = signal<AuthUser | null>(null);
+  protected readonly menu = computed(() => this.filterMenu(MENU));
 
   protected readonly showSessionWarning = signal(false);
   protected readonly sessionRemainingSeconds = signal(0);
@@ -38,15 +40,37 @@ export class Portal implements OnInit, OnDestroy {
   private warningSub?: Subscription;
 
   ngOnInit(): void {
-    // 1. Start idle monitoring & pass logout handler
+    // 1. Load active user for menu filtering
+    void this.loadActiveUser();
+
+    // 2. Start idle monitoring & pass logout handler
     this.idleService.startMonitoring(() => this.handleLogout());
 
-    // 2. Subscribe to the warning signal
+    // 3. Subscribe to the warning signal
     this.warningSub = this.idleService.onWarning$.subscribe((secondsRemaining) => {
       this.sessionRemainingSeconds.set(secondsRemaining);
       this.showSessionWarning.set(true);
     });
 
+  }
+
+  private async loadActiveUser(): Promise<void> {
+    try {
+      const user = await this.authService.getActiveUser();
+      this.activeUser.set(user);
+    } catch {
+      this.activeUser.set(null);
+    }
+  }
+
+  private filterMenu(items: Menu[]): Menu[] {
+    const role = this.activeUser()?.role;
+    return items
+      .map((item) => ({
+        ...item,
+        children: item.children?.filter((child) => !child.role || child.role === role),
+      }))
+      .filter((item) => !item.role || item.role === role);
   }
 
   protected continueSession(): void {

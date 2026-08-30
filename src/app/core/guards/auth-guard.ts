@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../../pages/auth/services/auth-service';
 import { AUTH_STORAGE_KEYS } from '../../constants/auth.const';
 
 function isAuthenticated(): boolean {
@@ -14,4 +15,13 @@ export const authGuard: CanActivateFn = () => {
 export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
   return isAuthenticated() ? router.createUrlTree(['/portal/dashboard']) : true;
+};
+
+export const adminGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  const authService = inject(AuthService);
+
+  return authService.getActiveUser()
+    .then((user) => (user.role === 'Admin' ? true : router.createUrlTree(['/portal/dashboard'])))
+    .catch(() => router.createUrlTree(['/login']));
 };

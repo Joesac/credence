@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password TEXT NOT NULL,
   is_disabled INTEGER NOT NULL DEFAULT 0,
+  role TEXT NOT NULL DEFAULT 'Regular',
   last_login TEXT,
   date_created TEXT NOT NULL DEFAULT (datetime('now')),
   date_updated TEXT NOT NULL DEFAULT (datetime('now')),
