@@ -161,15 +161,23 @@ export function updateUser(db: Database.Database, payload: UpdateUserPayload) {
  */
 export function seedDefaultAdminUser(db: Database.Database): void {
   const stmt = db.prepare(`
-    SELECT id FROM users WHERE username = @username COLLATE NOCASE LIMIT 1
+    SELECT id, role FROM users WHERE username = @username COLLATE NOCASE LIMIT 1
   `);
-  const existingUser = stmt.get({ username: DEFAULT_ADMIN_USER.username }) as { id: string } | undefined;
+  const existingUser = stmt.get({ username: DEFAULT_ADMIN_USER.username }) as { id: string; role: string } | undefined;
 
-  if (existingUser) {
+  if (!existingUser) {
+    createUser(db, DEFAULT_ADMIN_USER);
     return;
   }
 
-  createUser(db, DEFAULT_ADMIN_USER);
+  if (existingUser.role !== 'Admin') {
+    const update = db.prepare(`
+      UPDATE users
+      SET role = 'Admin', is_synced = 0, date_updated = datetime('now')
+      WHERE id = @id
+    `);
+    update.run({ id: existingUser.id });
+  }
 }
 
 export function loginUser(db: Database.Database, payload: LoginUserPayload) {
