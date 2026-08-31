@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   is_disabled: boolean('is_disabled').notNull().default(false),
+  role: text('role').notNull().default('Regular'),
   last_login: timestamp('last_login', { withTimezone: true }),
   date_created: timestamp('date_created', { withTimezone: true }).notNull().defaultNow(),
   date_updated: timestamp('date_updated', { withTimezone: true }).notNull().defaultNow(),
