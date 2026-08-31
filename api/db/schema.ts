@@ -113,6 +113,20 @@ export const notifications = pgTable('notifications', {
 });
 
 /**
+ * Per-member push notification preferences.
+ * Managed from the mobile app; consulted by the push sender before dispatching.
+ */
+export const member_notification_prefs = pgTable('member_notification_prefs', {
+  member_id: uuid('member_id').primaryKey().references(() => members.id, { onDelete: 'cascade' }),
+  push_enabled: boolean('push_enabled').notNull().default(true),
+  deposit_alerts: boolean('deposit_alerts').notNull().default(true),
+  withdrawal_alerts: boolean('withdrawal_alerts').notNull().default(true),
+  loan_alerts: boolean('loan_alerts').notNull().default(true),
+  reminder_alerts: boolean('reminder_alerts').notNull().default(true),
+  date_updated: timestamp('date_updated', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Maps table names to their Drizzle table objects.
  * Used by the sync route to resolve the target table dynamically.
  */

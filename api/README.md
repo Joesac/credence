@@ -33,7 +33,7 @@ Edit `.env`:
 npx drizzle-kit push
 ```
 
-This creates all 7 tables in Neon (users, members, deposits, withdrawals, loans, loan_repayments, fund_distributions).
+This creates all tables in Neon (users, members, deposits, withdrawals, loans, loan_repayments, fund_distributions, notifications, member_notification_prefs).
 
 ### 5. Run locally
 
@@ -60,6 +60,16 @@ The `vercel.json` routes all `/api/*` requests to the Express app.
 |--------|------|------|-------------|
 | GET | `/api/health` | None | Health check + DB connectivity |
 | POST | `/api/sync/:table` | Bearer | Upsert a batch of rows (max 100) |
+| POST | `/api/auth/login` | None | Member login (account number + password) |
+| POST | `/api/auth/refresh` | None | Refresh member access token |
+| GET | `/api/members/me/notification-preferences` | Member JWT | Read push notification preferences |
+| PATCH | `/api/members/me/notification-preferences` | Member JWT | Update push notification preferences |
+
+Member-scoped routes (`/api/members/me/*` — dashboard, deposits, withdrawals, loans, notifications, password, device-token) are defined in `src/routes/member.ts`.
+
+### Notification preferences
+
+The `member_notification_prefs` table stores per-member push preferences. The push sender **must** call `shouldNotify(type, prefs)` from `src/utils/notification-prefs.ts` before dispatching a push so members who opted out of a category are never pinged.
 
 ### Sync Request
 

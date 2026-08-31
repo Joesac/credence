@@ -10,9 +10,11 @@ import {
   loans,
   loan_repayments,
   notifications,
+  member_notification_prefs,
 } from '../../db/schema';
 import { requireMember } from '../middleware/member-auth';
 import { verifyPassword, hashPassword } from '../utils/password';
+import { toApiPrefs } from '../utils/notification-prefs';
 
 const router = Router();
 
@@ -543,8 +545,70 @@ router.post('/members/me/device-token', async (req, res, next) => {
     }
 
     // Token storage will be implemented when push sending is added.
+    // The push sender MUST consult the member's notification preferences
+    // (see src/utils/notification-prefs.ts) before dispatching.
     // For now, acknowledge receipt so the client can proceed.
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/members/me/notification-preferences — Read push preferences
+// ---------------------------------------------------------------------------
+
+router.get('/members/me/notification-preferences', async (req, res, next) => {
+  try {
+    const memberId = getMemberId(req);
+
+    const [row] = await db
+      .select()
+      .from(member_notification_prefs)
+      .where(eq(member_notification_prefs.member_id, memberId));
+
+    res.json(toApiPrefs(row));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /api/members/me/notification-preferences — Update push preferences
+// ---------------------------------------------------------------------------
+
+const notificationPrefsSchema = z.object({
+  pushEnabled: z.boolean().optional(),
+  depositAlerts: z.boolean().optional(),
+  withdrawalAlerts: z.boolean().optional(),
+  loanAlerts: z.boolean().optional(),
+  reminderAlerts: z.boolean().optional(),
+});
+
+router.patch('/members/me/notification-preferences', async (req, res, next) => {
+  try {
+    const memberId = getMemberId(req);
+    const parsed = notificationPrefsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.error.message });
+      return;
+    }
+
+    const patch = parsed.data;
+    await db
+      .insert(member_notification_prefs)
+      .values({ member_id: memberId, ...patch, date_updated: new Date() })
+      .onConflictDoUpdate({
+        target: member_notification_prefs.member_id,
+        set: { ...patch, date_updated: new Date() },
+      });
+
+    const [row] = await db
+      .select()
+      .from(member_notification_prefs)
+      .where(eq(member_notification_prefs.member_id, memberId));
+
+    res.json(toApiPrefs(row));
   } catch (err) {
     next(err);
   }
