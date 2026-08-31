@@ -122,10 +122,10 @@ router.get('/members/me/dashboard', async (req, res, next) => {
         type: sql<'deposit'>`'deposit'`,
         amount: deposits.amount,
         date: deposits.date_created,
-        status: sql<string>`CASE WHEN ${deposits.is_cancelled} THEN 'cancelled' ELSE 'completed' END`,
+        status: sql<string>`'completed'`,
       })
       .from(deposits)
-      .where(eq(deposits.member_id, memberId))
+      .where(and(eq(deposits.member_id, memberId), eq(deposits.is_cancelled, false)))
       .orderBy(desc(deposits.date_created))
       .limit(5);
 
@@ -135,10 +135,10 @@ router.get('/members/me/dashboard', async (req, res, next) => {
         type: sql<'withdrawal'>`'withdrawal'`,
         amount: withdrawals.amount,
         date: withdrawals.date_created,
-        status: sql<string>`CASE WHEN ${withdrawals.is_cancelled} THEN 'cancelled' ELSE 'completed' END`,
+        status: sql<string>`'completed'`,
       })
       .from(withdrawals)
-      .where(eq(withdrawals.member_id, memberId))
+      .where(and(eq(withdrawals.member_id, memberId), eq(withdrawals.is_cancelled, false)))
       .orderBy(desc(withdrawals.date_created))
       .limit(5);
 
@@ -161,11 +161,11 @@ router.get('/members/me/dashboard', async (req, res, next) => {
         type: sql<'repayment'>`'repayment'`,
         amount: loan_repayments.amount,
         date: loan_repayments.date_created,
-        status: sql<string>`CASE WHEN ${loan_repayments.is_cancelled} THEN 'cancelled' ELSE 'completed' END`,
+        status: sql<string>`'completed'`,
       })
       .from(loan_repayments)
       .innerJoin(loans, eq(loans.id, loan_repayments.loan_id))
-      .where(eq(loans.member_id, memberId))
+      .where(and(eq(loans.member_id, memberId), eq(loan_repayments.is_cancelled, false)))
       .orderBy(desc(loan_repayments.date_created))
       .limit(5);
 
@@ -216,6 +216,7 @@ router.get('/members/me/deposits', async (req, res, next) => {
     const offset = requestedOffset ?? (page - 1) * limit;
     const filters = [
       eq(deposits.member_id, memberId),
+      eq(deposits.is_cancelled, false),
       ...(startDate ? [gte(deposits.date_created, new Date(startDate))] : []),
     ];
 
@@ -278,6 +279,7 @@ router.get('/members/me/withdrawals', async (req, res, next) => {
     const offset = requestedOffset ?? (page - 1) * limit;
     const filters = [
       eq(withdrawals.member_id, memberId),
+      eq(withdrawals.is_cancelled, false),
       ...(startDate ? [gte(withdrawals.date_created, new Date(startDate))] : []),
     ];
 
@@ -322,6 +324,86 @@ router.get('/members/me/withdrawals', async (req, res, next) => {
       hasMore: offset + rows.length < total,
       nextOffset: offset + rows.length,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/members/me/deposits/:id — Deposit detail
+// ---------------------------------------------------------------------------
+
+router.get('/members/me/deposits/:id', async (req, res, next) => {
+  try {
+    const memberId = getMemberId(req);
+    const depositId = req.params.id;
+
+    const [row] = await db
+      .select({
+        id: deposits.id,
+        transaction_id: deposits.transaction_id,
+        member_id: deposits.member_id,
+        member_name: members.fullname,
+        received_by: deposits.received_by,
+        received_by_name: users.fullname,
+        payment_method: deposits.payment_method,
+        amount: deposits.amount,
+        refreshment_token: deposits.refreshment_token,
+        notes: deposits.notes,
+        is_cancelled: deposits.is_cancelled,
+        date_created: deposits.date_created,
+        date_updated: deposits.date_updated,
+      })
+      .from(deposits)
+      .leftJoin(members, eq(members.id, deposits.member_id))
+      .leftJoin(users, eq(users.id, deposits.received_by))
+      .where(and(eq(deposits.id, depositId), eq(deposits.member_id, memberId)));
+
+    if (!row) {
+      res.status(404).json({ code: 'NOT_FOUND', message: 'Deposit not found.' });
+      return;
+    }
+
+    res.json({ ...row, amount: toNumber(row.amount) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/members/me/withdrawals/:id — Withdrawal detail
+// ---------------------------------------------------------------------------
+
+router.get('/members/me/withdrawals/:id', async (req, res, next) => {
+  try {
+    const memberId = getMemberId(req);
+    const withdrawalId = req.params.id;
+
+    const [row] = await db
+      .select({
+        id: withdrawals.id,
+        transaction_id: withdrawals.transaction_id,
+        member_id: withdrawals.member_id,
+        member_name: members.fullname,
+        issuer_id: withdrawals.issuer_id,
+        issuer_name: users.fullname,
+        amount: withdrawals.amount,
+        notes: withdrawals.notes,
+        is_cancelled: withdrawals.is_cancelled,
+        date_created: withdrawals.date_created,
+        date_updated: withdrawals.date_updated,
+      })
+      .from(withdrawals)
+      .leftJoin(members, eq(members.id, withdrawals.member_id))
+      .leftJoin(users, eq(users.id, withdrawals.issuer_id))
+      .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.member_id, memberId)));
+
+    if (!row) {
+      res.status(404).json({ code: 'NOT_FOUND', message: 'Withdrawal not found.' });
+      return;
+    }
+
+    res.json({ ...row, amount: toNumber(row.amount) });
   } catch (err) {
     next(err);
   }
