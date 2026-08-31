@@ -55,7 +55,7 @@ The API runs on `http://localhost:3001`.
    - `JWT_SECRET` — secret for member JWT auth
    - `ONESIGNAL_APP_ID` — OneSignal app ID (server-side only)
    - `ONESIGNAL_REST_API_KEY` — OneSignal REST API key (server-side only)
-   - `NOTIFICATIONS_CRON_SECRET` — secret authorizing manual cron invocations (falls back to `API_KEY`; Vercel cron also forwards `CRON_SECRET` as `Authorization: Bearer`)
+   - `NOTIFICATIONS_CRON_SECRET` — secret authorizing processor invocations (falls back to `API_KEY`)
    - `NOTIFICATIONS_MAX_ATTEMPTS` — max delivery attempts before an event is marked `FAILED` (default `5`)
 4. Deploy
 
@@ -88,8 +88,25 @@ Durable push delivery is implemented as a transactional outbox so that OneSignal
 Flow:
 1. Desktop sync upserts a deposit/withdrawal into Postgres.
 2. In the **same transaction**, a row is inserted into `notification_events` (`type`, `entity_id`, `member_id`, `payload`). A `UNIQUE (type, entity_id)` constraint prevents duplicate events when sync is retried.
-3. A Vercel cron job (`/api/cron/notifications`, configured in `vercel.json`) claims pending events with `FOR UPDATE SKIP LOCKED`, checks member preferences, and dispatches to OneSignal using `include_aliases.external_id` + `target_channel: push` (current OneSignal API).
+3. An external scheduler (Vercel's Hobby plan has no cron jobs) calls `/api/cron/notifications`, which claims pending events with `FOR UPDATE SKIP LOCKED`, checks member preferences, and dispatches to OneSignal using `include_aliases.external_id` + `target_channel: push` (current OneSignal API).
 4. Transient failures (HTTP 429 / 5xx) are retried with backoff up to `NOTIFICATIONS_MAX_ATTEMPTS`; other 4xx errors are treated as permanent. Exhausted events are marked `FAILED`.
+
+### Scheduling the processor (external cron)
+
+The processor endpoint requires no Vercel cron — any HTTP client can call it. Vercel's Hobby plan doesn't support cron jobs, so use a free external scheduler:
+
+```http
+GET /api/cron/notifications
+Authorization: Bearer <NOTIFICATIONS_CRON_SECRET>
+```
+
+Free options:
+
+- **cron-job.org** — free tier allows intervals down to 1 minute. Create a job with URL `https://<your-app>.vercel.app/api/cron/notifications` and add the `Authorization: Bearer <secret>` header. You can also pass `?limit=100&batches=5` to drain faster.
+- **EasyCron** — free tier with 5-minute minimum interval.
+- **GitHub Actions** — a scheduled workflow with `cron: "*/5 * * * *"` that calls the endpoint with `curl`. Minimum interval is 5 minutes.
+
+Pick one that can send a custom `Authorization` header. The scheduler may run concurrently with itself — the processor uses `FOR UPDATE SKIP LOCKED`, so overlapping runs are safe.
 
 Tables:
 - `notification_events` — the outbox queue (statuses: `PENDING`, `PROCESSING`, `SENT`, `SKIPPED`, `FAILED`)

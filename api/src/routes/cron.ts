@@ -13,15 +13,11 @@ const service: ProcessorDeps['service'] = { process: processEvent };
 /**
  * Authorizes a processor invocation.
  *
- * Primary: `Authorization: Bearer <secret>` where the secret is
- * `NOTIFICATIONS_CRON_SECRET` (falling back to API_KEY). This matches
- * Vercel's recommended CRON_SECRET pattern — when the Vercel project has a
- * `CRON_SECRET` env var, Vercel forwards it as the Authorization header on
- * every cron invocation — and also covers manual/dev triggers.
- *
- * Secondary: Vercel cron requests also carry cron headers
- * (`x-vercel-cron: 1` and/or `x-vercel-cron-schedule`). These are treated as
- * a convenience signal only, since they are not credentials.
+ * `Authorization: Bearer <secret>` where the secret is
+ * `NOTIFICATIONS_CRON_SECRET` (falling back to API_KEY). This matches the
+ * Vercel CRON_SECRET convention (Vercel forwards the env var as the
+ * Authorization header on cron requests) and also covers external cron
+ * services (cron-job.org, EasyCron, GitHub Actions) and manual triggers.
  */
 function bearerMatches(provided: string | undefined, expected: string): boolean {
   if (!provided || !provided.startsWith('Bearer ')) return false;
@@ -32,17 +28,15 @@ function bearerMatches(provided: string | undefined, expected: string): boolean 
 
 function isAuthorized(req: Request): boolean {
   const expected = process.env.NOTIFICATIONS_CRON_SECRET ?? process.env.API_KEY;
-  if (expected && bearerMatches(req.headers.authorization, expected)) return true;
-
-  const isVercelCron =
-    req.headers['x-vercel-cron'] === '1' || typeof req.headers['x-vercel-cron-schedule'] === 'string';
-  return isVercelCron;
+  return !!expected && bearerMatches(req.headers.authorization, expected);
 }
 
 /**
  * GET /api/cron/notifications
  *
- * Serverless-friendly processor trigger (Vercel cron, every minute).
+ * Serverless-friendly processor trigger. Vercel's Hobby plan does not allow
+ * cron jobs, so this endpoint is invoked by an external scheduler
+ * (cron-job.org, EasyCron, GitHub Actions) or manually.
  * Durability is in the database: the request may finish or crash at any
  * point; unprocessed events remain PENDING and are picked up later.
  *

@@ -41,7 +41,7 @@ app.use('/api', syncRouter);
 app.use('/api', memberRouter);
 app.use('/api', notificationsRouter);
 
-// Notification processor trigger — Vercel cron (protected inside the router)
+// Notification processor trigger — external cron / manual (protected inside the router)
 app.use('/api', cronRouter);
 
 // 404 handler for unmatched routes

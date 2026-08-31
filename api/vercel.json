@@ -2,11 +2,5 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/src/index" }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/notifications",
-      "schedule": "*/1 * * * *"
-    }
   ]
 }
