@@ -66,7 +66,7 @@ export function buildUpsertWithEvents({ tableName, columns, valuesChunks }: Buil
       ${eventType},
       u."member_id",
       u."id",
-      jsonb_build_object('entityType', ${entityType}, 'entityId', u."id", 'transactionId', u."transaction_id"),
+      jsonb_build_object('entityType', ${entityType}::text, 'entityId', u."id", 'transactionId', u."transaction_id"),
       'PENDING',
       0,
       now(),
