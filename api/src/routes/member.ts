@@ -676,15 +676,33 @@ router.patch('/members/me/notification-preferences', async (req, res, next) => {
 router.get('/members/me/notifications', async (req, res, next) => {
   try {
     const memberId = getMemberId(req);
+    const { page, offset: requestedOffset, limit } = paginationSchema.parse(req.query);
+    const offset = requestedOffset ?? (page - 1) * limit;
 
-    const items = await db
+    const [countResult] = await db
+      .select({ total: sql<number>`COUNT(*)::int` })
+      .from(notifications)
+      .where(eq(notifications.member_id, memberId));
+
+    const rows = await db
       .select()
       .from(notifications)
       .where(eq(notifications.member_id, memberId))
       .orderBy(desc(notifications.date_created))
-      .limit(50);
+      .limit(limit)
+      .offset(offset);
 
-    res.json(items);
+    const total = countResult?.total ?? 0;
+
+    res.json({
+      data: rows,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasMore: offset + rows.length < total,
+      nextOffset: offset + rows.length,
+    });
   } catch (err) {
     next(err);
   }

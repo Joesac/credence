@@ -8,11 +8,13 @@ import type { ClaimedEventRow } from './repo';
 const mocks = vi.hoisted(() => {
   const db = {
     select: vi.fn(),
+    insert: vi.fn(),
   };
   const state = {
     depositRows: [] as unknown[],
     withdrawalRows: [] as unknown[],
     prefsRows: [] as unknown[],
+    insertedNotifications: [] as unknown[],
   };
   return { db, state };
 });
@@ -35,6 +37,11 @@ function setupDb() {
       },
     }),
   }));
+  mocks.db.insert.mockImplementation(() => ({
+    values: async (row: unknown) => {
+      mocks.state.insertedNotifications.push(row);
+    },
+  }));
 }
 
 function makeEvent(overrides: Partial<ClaimedEventRow> = {}): ClaimedEventRow {
@@ -55,6 +62,7 @@ describe('NotificationService.processEvent', () => {
     mocks.state.depositRows = [];
     mocks.state.withdrawalRows = [];
     mocks.state.prefsRows = [];
+    mocks.state.insertedNotifications = [];
     setupDb();
   });
 
@@ -77,6 +85,15 @@ describe('NotificationService.processEvent', () => {
         transactionId: 'DEP-2026-0001',
       },
     });
+    // Also persisted to the in-app notifications table for the Alerts list.
+    expect(mocks.state.insertedNotifications).toHaveLength(1);
+    expect(mocks.state.insertedNotifications[0]).toMatchObject({
+      member_id: 'member-1',
+      title: 'Deposit received',
+      type: 'deposit',
+      related_id: 'dep-1',
+      is_read: false,
+    });
   });
 
   it('sends a withdrawal push built from the authoritative DB row', async () => {
@@ -94,6 +111,13 @@ describe('NotificationService.processEvent', () => {
         contents: { en: 'A withdrawal of GHS 200.00 has been recorded on your account.' },
       }),
     );
+    expect(mocks.state.insertedNotifications).toHaveLength(1);
+    expect(mocks.state.insertedNotifications[0]).toMatchObject({
+      member_id: 'member-1',
+      title: 'Withdrawal recorded',
+      type: 'withdrawal',
+      related_id: 'wdr-1',
+    });
   });
 
   it('skips when the member disabled the category in preferences', async () => {
@@ -106,6 +130,7 @@ describe('NotificationService.processEvent', () => {
 
     expect(outcome).toBe('skipped');
     expect(sendToMember).not.toHaveBeenCalled();
+    expect(mocks.state.insertedNotifications).toHaveLength(0);
   });
 
   it('skips when push is globally disabled', async () => {
@@ -118,6 +143,7 @@ describe('NotificationService.processEvent', () => {
 
     expect(outcome).toBe('skipped');
     expect(sendToMember).not.toHaveBeenCalled();
+    expect(mocks.state.insertedNotifications).toHaveLength(0);
   });
 
   it('skips when the transaction was cancelled or no longer exists', async () => {
@@ -126,6 +152,7 @@ describe('NotificationService.processEvent', () => {
 
     expect(outcome).toBe('skipped');
     expect(sendToMember).not.toHaveBeenCalled();
+    expect(mocks.state.insertedNotifications).toHaveLength(0);
   });
 
   it('does not fail the transaction when OneSignal is unavailable (error propagates to processor)', async () => {

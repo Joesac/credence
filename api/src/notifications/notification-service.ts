@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { db } from '../../db';
-import { deposits, withdrawals, member_notification_prefs } from '../../db/schema';
+import { deposits, withdrawals, notifications, member_notification_prefs } from '../../db/schema';
 import { CONTENT_PROVIDERS, formatMoney } from './content';
 import { OneSignalError, sendToMember } from './onesignal-service';
 import type { NotificationEventType } from './constants';
@@ -88,6 +89,19 @@ export async function processEvent(event: ClaimedEvent): Promise<ProcessOutcome>
     headings: { en: content.title },
     contents: { en: content.body },
     data: content.data,
+  });
+
+  // Persist to the in-app notifications table so the member can see it in
+  // their Alerts list regardless of whether the app was open when the push
+  // arrived. The related_id points to the transaction for deep-linking.
+  await db.insert(notifications).values({
+    id: randomUUID(),
+    member_id: event.member_id,
+    title: content.title,
+    body: content.body,
+    type: provider.prefsKey,
+    related_id: event.entity_id,
+    is_read: false,
   });
 
   return 'sent';
