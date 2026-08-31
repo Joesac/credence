@@ -37,12 +37,14 @@ app.use('/api', authRouter);
 // Sync routes require Bearer API key (officer desktop push)
 app.use('/api', syncRouter);
 
+// Notification processor trigger — external cron / manual (protected inside the router)
+// Must be mounted BEFORE member-facing routers because those routers apply
+// JWT middleware globally, which would reject the cron secret as an invalid token.
+app.use('/api', cronRouter);
+
 // Member-facing routes — JWT auth (handled inside the router middleware)
 app.use('/api', memberRouter);
 app.use('/api', notificationsRouter);
-
-// Notification processor trigger — external cron / manual (protected inside the router)
-app.use('/api', cronRouter);
 
 // 404 handler for unmatched routes
 app.use((_req: Request, res: Response) => {
