@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, numeric, integer, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, numeric, integer, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
  * Drizzle schema mirroring the local SQLite tables in Credence.
@@ -125,6 +125,65 @@ export const member_notification_prefs = pgTable('member_notification_prefs', {
   reminder_alerts: boolean('reminder_alerts').notNull().default(true),
   date_updated: timestamp('date_updated', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Transactional outbox for push notifications.
+ *
+ * A row is created in the SAME database statement that makes a transaction
+ * authoritative (deposit/withdrawal upsert during sync), so the transaction
+ * and its notification event commit atomically. A separate serverless
+ * processor (Vercel cron) claims and dispatches events to OneSignal.
+ *
+ * `UNIQUE (type, entity_id)` guarantees one logical notification event per
+ * transaction row regardless of how many times offline sync is retried.
+ */
+export const notification_events = pgTable(
+  'notification_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: text('type').notNull(),
+    member_id: uuid('member_id').notNull().references(() => members.id, { onDelete: 'cascade' }),
+    entity_id: uuid('entity_id').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    status: text('status').notNull().default('PENDING'),
+    attempt_count: integer('attempt_count').notNull().default(0),
+    available_at: timestamp('available_at', { withTimezone: true }).notNull().defaultNow(),
+    claimed_at: timestamp('claimed_at', { withTimezone: true }),
+    processed_at: timestamp('processed_at', { withTimezone: true }),
+    last_error: text('last_error'),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('notification_events_type_entity_unique').on(t.type, t.entity_id),
+    index('notification_events_status_available_idx').on(t.status, t.available_at),
+  ],
+);
+
+/**
+ * Authenticated device/subscription registry (OneSignal subscription ids).
+ *
+ * Written by the mobile app through JWT-protected endpoints only — the
+ * member id always comes from the session, never from the client body.
+ * OneSignal remains the source of truth for device ownership; this table
+ * provides observability and supports the "no device" fast path.
+ */
+export const member_push_subscriptions = pgTable(
+  'member_push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    member_id: uuid('member_id').notNull().references(() => members.id, { onDelete: 'cascade' }),
+    subscription_id: text('subscription_id').notNull(),
+    push_token: text('push_token'),
+    platform: text('platform'),
+    status: text('status').notNull().default('active'),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('member_push_subscriptions_member_sub_unique').on(t.member_id, t.subscription_id),
+  ],
+);
 
 /**
  * Maps table names to their Drizzle table objects.

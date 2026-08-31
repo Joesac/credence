@@ -528,33 +528,6 @@ router.patch('/members/me/password', async (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/members/me/device-token — Register push notification token
-// ---------------------------------------------------------------------------
-
-const deviceTokenSchema = z.object({
-  token: z.string().min(1),
-});
-
-router.post('/members/me/device-token', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const parsed = deviceTokenSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.error.message });
-      return;
-    }
-
-    // Token storage will be implemented when push sending is added.
-    // The push sender MUST consult the member's notification preferences
-    // (see src/utils/notification-prefs.ts) before dispatching.
-    // For now, acknowledge receipt so the client can proceed.
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ---------------------------------------------------------------------------
 // GET /api/members/me/notification-preferences — Read push preferences
 // ---------------------------------------------------------------------------
 

@@ -4,6 +4,8 @@ import { syncRouter } from './routes/sync';
 import { healthRouter } from './routes/health';
 import { authRouter } from './routes/auth';
 import { memberRouter } from './routes/member';
+import { notificationsRouter } from './routes/notifications';
+import { cronRouter } from './routes/cron';
 
 const app = express();
 
@@ -12,7 +14,7 @@ const app = express();
 // We handle OPTIONS manually to guarantee preflight requests never hit auth.
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -37,6 +39,10 @@ app.use('/api', syncRouter);
 
 // Member-facing routes — JWT auth (handled inside the router middleware)
 app.use('/api', memberRouter);
+app.use('/api', notificationsRouter);
+
+// Notification processor trigger — Vercel cron (protected inside the router)
+app.use('/api', cronRouter);
 
 // 404 handler for unmatched routes
 app.use((_req: Request, res: Response) => {

@@ -33,7 +33,9 @@ Edit `.env`:
 npx drizzle-kit push
 ```
 
-This creates all tables in Neon (users, members, deposits, withdrawals, loans, loan_repayments, fund_distributions, notifications, member_notification_prefs).
+This creates all tables in Neon (users, members, deposits, withdrawals, loans, loan_repayments, fund_distributions, notifications, member_notification_prefs, notification_events, member_push_subscriptions).
+
+For applying individual migrations instead of `push` (recommended when the live DB has drift), see the SQL files under `drizzle/` and the Schema Management section below.
 
 ### 5. Run locally
 
@@ -50,6 +52,11 @@ The API runs on `http://localhost:3001`.
 3. Set environment variables in Vercel dashboard:
    - `DATABASE_URL` — Neon connection string
    - `API_KEY` — same key you configured in the desktop app
+   - `JWT_SECRET` — secret for member JWT auth
+   - `ONESIGNAL_APP_ID` — OneSignal app ID (server-side only)
+   - `ONESIGNAL_REST_API_KEY` — OneSignal REST API key (server-side only)
+   - `NOTIFICATIONS_CRON_SECRET` — secret authorizing manual cron invocations (falls back to `API_KEY`; Vercel cron also forwards `CRON_SECRET` as `Authorization: Bearer`)
+   - `NOTIFICATIONS_MAX_ATTEMPTS` — max delivery attempts before an event is marked `FAILED` (default `5`)
 4. Deploy
 
 The `vercel.json` routes all `/api/*` requests to the Express app.
@@ -64,12 +71,31 @@ The `vercel.json` routes all `/api/*` requests to the Express app.
 | POST | `/api/auth/refresh` | None | Refresh member access token |
 | GET | `/api/members/me/notification-preferences` | Member JWT | Read push notification preferences |
 | PATCH | `/api/members/me/notification-preferences` | Member JWT | Update push notification preferences |
+| POST | `/api/notifications/subscription` | Member JWT | Register/refresh OneSignal push subscription |
+| DELETE | `/api/notifications/subscription` | Member JWT | Remove OneSignal push subscription (logout) |
+| GET | `/api/cron/notifications` | Cron secret | Process pending notification events and dispatch to OneSignal |
 
-Member-scoped routes (`/api/members/me/*` — dashboard, deposits, withdrawals, loans, notifications, password, device-token) are defined in `src/routes/member.ts`.
+Member-scoped routes (`/api/members/me/*` — dashboard, deposits, withdrawals, loans, notifications, password) are defined in `src/routes/member.ts`.
 
 ### Notification preferences
 
-The `member_notification_prefs` table stores per-member push preferences. The push sender **must** call `shouldNotify(type, prefs)` from `src/utils/notification-prefs.ts` before dispatching a push so members who opted out of a category are never pinged.
+The `member_notification_prefs` table stores per-member push preferences. The notification processor checks these server-side before dispatching so members who opted out of a category are never pinged.
+
+### Push notifications (transactional outbox)
+
+Durable push delivery is implemented as a transactional outbox so that OneSignal failures can never roll back a successfully persisted financial transaction.
+
+Flow:
+1. Desktop sync upserts a deposit/withdrawal into Postgres.
+2. In the **same transaction**, a row is inserted into `notification_events` (`type`, `entity_id`, `member_id`, `payload`). A `UNIQUE (type, entity_id)` constraint prevents duplicate events when sync is retried.
+3. A Vercel cron job (`/api/cron/notifications`, configured in `vercel.json`) claims pending events with `FOR UPDATE SKIP LOCKED`, checks member preferences, and dispatches to OneSignal using `include_aliases.external_id` + `target_channel: push` (current OneSignal API).
+4. Transient failures (HTTP 429 / 5xx) are retried with backoff up to `NOTIFICATIONS_MAX_ATTEMPTS`; other 4xx errors are treated as permanent. Exhausted events are marked `FAILED`.
+
+Tables:
+- `notification_events` — the outbox queue (statuses: `PENDING`, `PROCESSING`, `SENT`, `SKIPPED`, `FAILED`)
+- `member_push_subscriptions` — OneSignal subscription IDs registered by the mobile app via JWT-protected endpoints. The member ID is always derived from the session, never from the request body.
+
+The mobile app calls `OneSignal.login(member.id)` after authentication and `OneSignal.logout()` on logout, so OneSignal groups all of a member's devices under one external ID.
 
 ### Sync Request
 
