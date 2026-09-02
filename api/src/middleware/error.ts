@@ -1,18 +1,17 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { ErrorHandler } from 'hono';
 
 /**
- * Express error-handling middleware.
+ * Hono error handler (app.onError).
  * Mirrors the IpcError shape { code, message, details? } from the desktop app
  * so the Angular client can handle errors consistently across IPC and HTTP.
  */
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+export const errorHandler: ErrorHandler = (err, c) => {
   if (err instanceof Error) {
     const code = (err as { code?: string }).code ?? 'INTERNAL_ERROR';
     const details = (err as { details?: unknown }).details;
     console.error(`[API Error] ${code}: ${err.message}`, details ?? '');
-    res.status(500).json({ code, message: err.message, details });
-    return;
+    return c.json({ code, message: err.message, details }, 500);
   }
 
-  res.status(500).json({ code: 'INTERNAL_ERROR', message: 'An unexpected error occurred.' });
-}
+  return c.json({ code: 'INTERNAL_ERROR', message: 'An unexpected error occurred.' }, 500);
+};

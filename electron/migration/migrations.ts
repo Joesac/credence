@@ -157,6 +157,42 @@ const createAppSettingsTable: Migration = {
   },
 };
 
+import { USER_ROLES } from '../constants';
+
+const addUsersRoleColumn: Migration = {
+  id: '20260830_add_users_role_column',
+  description: `Add role column to users table with default '${USER_ROLES.Regular}'`,
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'users', 'role', `role TEXT NOT NULL DEFAULT '${USER_ROLES.Regular}'`);
+  },
+};
+
+const createAuditLogsTable: Migration = {
+  id: '20260830_create_audit_logs_table',
+  description: 'Create audit_logs table for tracking admin actions',
+  run: (db: Database.Database) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id TEXT PRIMARY KEY,
+        actor_id TEXT NOT NULL,
+        target_id TEXT,
+        action TEXT NOT NULL,
+        details TEXT,
+        is_synced INTEGER NOT NULL DEFAULT 0,
+        date_created TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+  },
+};
+
+const addAppSettingsIsSyncedColumn: Migration = {
+  id: '20260830_add_app_settings_is_synced_column',
+  description: 'Add is_synced column to app_settings table',
+  run: (db: Database.Database) => {
+    addColumnIfMissing(db, 'app_settings', 'is_synced', 'is_synced INTEGER NOT NULL DEFAULT 0');
+  },
+};
+
 export const MIGRATIONS: Migration[] = [
   migrateWithdrawalsColumns,
   addTransactionIdColumns,
@@ -171,4 +207,7 @@ export const MIGRATIONS: Migration[] = [
   addLoanDateUpdatedColumn,
   addMemberPasswordColumn,
   createAppSettingsTable,
+  addUsersRoleColumn,
+  createAuditLogsTable,
+  addAppSettingsIsSyncedColumn,
 ];

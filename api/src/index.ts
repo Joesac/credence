@@ -1,59 +1,49 @@
-import express, { type Request, type Response, type NextFunction } from 'express';
-import { requireApiKey } from './middleware/auth';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { errorHandler } from './middleware/error';
 import { syncRouter } from './routes/sync';
 import { healthRouter } from './routes/health';
 import { authRouter } from './routes/auth';
 import { memberRouter } from './routes/member';
+import { notificationsRouter } from './routes/notifications';
+import { cronRouter } from './routes/cron';
 
-const app = express();
+const app = new Hono();
 
 // CORS: allow all origins. The API is protected by the Bearer API key for sync
 // and by JWT for member routes, so origin allowlisting is not required.
-// We handle OPTIONS manually to guarantee preflight requests never hit auth.
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-
-  next();
-});
-
-// JSON body parser with 1MB limit (100 rows max per batch)
-app.use(express.json({ limit: '1mb' }));
+// Hono's cors middleware replies to OPTIONS preflight requests automatically,
+// so preflight requests never hit auth.
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Authorization', 'Content-Type'],
+}));
 
 // Health check is public (no auth)
-app.use('/api', healthRouter);
+app.route('/api', healthRouter);
 
 // Member auth routes (login, refresh) — public, no API key needed
-app.use('/api', authRouter);
+app.route('/api', authRouter);
 
 // Sync routes require Bearer API key (officer desktop push)
-app.use('/api', requireApiKey, syncRouter);
+app.route('/api', syncRouter);
+
+// Notification processor trigger — external cron / manual (protected inside the router)
+// Must be mounted BEFORE member-facing routers because those routers apply
+// JWT middleware globally, which would reject the cron secret as an invalid token.
+app.route('/api', cronRouter);
 
 // Member-facing routes — JWT auth (handled inside the router middleware)
-app.use('/api', memberRouter);
+app.route('/api', memberRouter);
+app.route('/api', notificationsRouter);
 
 // 404 handler for unmatched routes
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({ code: 'NOT_FOUND', message: 'The requested resource was not found.' });
+app.notFound((c) => {
+  return c.json({ code: 'NOT_FOUND', message: 'The requested resource was not found.' }, 404);
 });
 
-// Error handler (must be last)
-app.use(errorHandler);
+// Error handler (must be registered last)
+app.onError(errorHandler);
 
-// For local development: start HTTP server
-const PORT = process.env.PORT ?? 3001;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Credence Cloud API running on http://localhost:${PORT}`);
-  });
-}
-
-// For Vercel: export the app as a serverless handler
 export default app;

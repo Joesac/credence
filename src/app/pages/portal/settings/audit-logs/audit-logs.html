@@ -1,0 +1,18 @@
+<section class="card mt-6 max-width">
+  <header class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-main">Audit Logs</h1>
+    <p class="text-text-muted mt-1 text-sm">Track administrative actions and security events.</p>
+  </header>
+
+  <app-data-table
+    [data]="auditLogs()"
+    [columns]="tableConfig"
+    [loading]="isLoading()"
+  >
+    <ng-template appDataTableCell="action" let-row>
+      <span class="text-xs font-medium px-2 py-1 rounded-full bg-surface-hover text-text-main">
+        {{ row.action }}
+      </span>
+    </ng-template>
+  </app-data-table>
+</section>

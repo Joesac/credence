@@ -28,21 +28,50 @@ export class AuthService extends IpcBridgeService {
    * Toggles the disabled status of a user.
    */
   async toggleUserStatus(userId: string): Promise<User> {
-    return this.executeIPC(api => api.toggleUserStatus({ userId }));
+    const actorId = this.getUserId();
+    if (!actorId) {
+      throw new Error('NOT_AUTHENTICATED');
+    }
+    return this.executeIPC(api => api.toggleUserStatus({ userId, actorId }));
+  }
+
+  async adminResetUserPassword(payload: { actorPassword: string; targetUserId: string; newPassword: string }): Promise<User> {
+    const actorId = this.getUserId();
+    if (!actorId) {
+      throw new Error('NOT_AUTHENTICATED');
+    }
+    return this.executeIPC(api => api.adminResetUserPassword({ ...payload, actorId }));
+  }
+
+  async getSyncAdminPasswordStatus(): Promise<{ isSet: boolean }> {
+    return this.executeIPC(api => api.getSyncAdminPasswordStatus());
+  }
+
+  async verifySyncAdminPassword(password: string): Promise<{ valid: boolean }> {
+    return this.executeIPC(api => api.verifySyncAdminPassword({ password }));
+  }
+
+  async setSyncAdminPassword(payload: { currentPassword?: string; newPassword: string }): Promise<{ success: boolean }> {
+    const actorId = this.getUserId();
+    if (!actorId) {
+      throw new Error('NOT_AUTHENTICATED');
+    }
+    return this.executeIPC(api => api.setSyncAdminPassword({ ...payload, actorId }));
   }
 
   /**
    * Registers a new user account through the Electron bridge.
    * Returns the created user object when persistence succeeds.
    */
-  async register(payload: RegisterPayload): Promise<AuthUser> {
-    return this.executeIPC(api => api.addUser(payload));
+  async register(payload: RegisterPayload & { role?: string }): Promise<AuthUser> {
+    const actorId = this.getUserId();
+    return this.executeIPC(api => api.addUser({ ...payload, actorId: actorId ?? undefined }));
   }
 
   /**
    * Updates an existing user's profile details.
    */
-  async updateUser(payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string }): Promise<AuthUser> {
+  async updateUser(payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string; role?: string; actorId?: string }): Promise<AuthUser> {
     return this.executeIPC(api => api.updateUser(payload));
   }
 

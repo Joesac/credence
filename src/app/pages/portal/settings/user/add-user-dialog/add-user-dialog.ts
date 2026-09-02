@@ -3,12 +3,15 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { form, FormField, required, validate } from '@angular/forms/signals';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
+import { Dropdown } from '@shared/components/dropdown/dropdown';
+import { USER_ROLES } from '@constants/roles.const';
 import { AuthService } from '../../../../auth/services/auth-service';
 import { ToastService } from '@core/components/toast/service/toast-service';
 
 interface AddUserData {
   fullname: string;
   username: string;
+  role: string;
   password: string;
   confirmPassword: string;
 }
@@ -21,6 +24,7 @@ interface AddUserData {
     MatButtonModule,
     FormField,
     Inputfield,
+    Dropdown,
   ],
   templateUrl: './add-user-dialog.html',
 })
@@ -31,9 +35,15 @@ export class AddUserDialogComponent {
 
   protected readonly isSubmitting = signal(false);
 
+  protected readonly roleOptions = [
+    { label: USER_ROLES.Regular, value: USER_ROLES.Regular },
+    { label: USER_ROLES.Admin, value: USER_ROLES.Admin },
+  ];
+
   private readonly INITIAL_DATA: AddUserData = {
     fullname: '',
     username: '',
+    role: USER_ROLES.Regular,
     password: '',
     confirmPassword: '',
   };
@@ -48,6 +58,7 @@ export class AddUserDialogComponent {
   protected readonly addUserForm = form(this.addUserModel, (path) => {
     required(path.fullname, { message: 'Fullname is required.' });
     required(path.username, { message: 'Username is required.' });
+    required(path.role, { message: 'Role is required.' });
     required(path.password, { message: 'Password is required.' });
     required(path.confirmPassword, { message: 'Please confirm your password.' });
 
@@ -69,7 +80,7 @@ export class AddUserDialogComponent {
       return;
     }
 
-    const { fullname, username, password } = this.addUserForm().value();
+    const { fullname, username, role, password } = this.addUserForm().value();
 
     this.isSubmitting.set(true);
 
@@ -77,6 +88,7 @@ export class AddUserDialogComponent {
       await this.authService.register({
         fullname: fullname.trim(),
         username: username.trim().toLowerCase(),
+        role,
         password: password
       });
       

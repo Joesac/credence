@@ -13,6 +13,13 @@
       placeholder="Enter username"
     />
 
+    <app-dropdown
+      [formField]="addUserForm.role"
+      label="Role"
+      [collection]="roleOptions"
+      [inputReadonly]="true"
+    />
+
     <app-inputfield
       [formField]="addUserForm.password"
       label="Password"

@@ -1,0 +1,15 @@
+<section class="card mt-6 max-width">
+  <h1 class="text-2xl font-semibold text-text-main mb-6">Administrator</h1>
+  <mat-tab-group
+    dynamicHeight
+    animationDuration="0ms"
+    mat-stretch-tabs="false" 
+    mat-align-tabs="start">
+    <mat-tab label="Reset User Password">
+      <app-reset-user-password />
+    </mat-tab>
+    <mat-tab label="Reset Cloud Sync Password">
+      <app-reset-sync-password />
+    </mat-tab>
+  </mat-tab-group>
+</section>

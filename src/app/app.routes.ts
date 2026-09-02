@@ -7,7 +7,7 @@ import { Report } from './pages/portal/report/report';
 import { Settings } from './pages/portal/settings/settings';
 import { Login } from './pages/auth/login/login';
 import { Portal } from './pages/portal/portal';
-import { authGuard, guestGuard } from './core/guards/auth-guard';
+import { authGuard, guestGuard, adminGuard } from './core/guards/auth-guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'portal/dashboard', pathMatch: 'full' },
@@ -110,7 +110,20 @@ export const routes: Routes = [
         {
           path: 'sync',
           loadComponent: () => import('./pages/portal/settings/sync/sync').then(m => m.SyncComponent),
+          canActivate: [adminGuard],
           data: { breadcrumb: ['Cloud Sync'] }
+        },
+        {
+          path: 'administrator',
+          loadComponent: () => import('./pages/portal/settings/administrator/administrator').then(m => m.Administrator),
+          canActivate: [adminGuard],
+          data: { breadcrumb: ['Administrator'] }
+        },
+        {
+          path: 'audit-logs',
+          loadComponent: () => import('./pages/portal/settings/audit-logs/audit-logs').then(m => m.AuditLogsComponent),
+          canActivate: [adminGuard],
+          data: { breadcrumb: ['Audit Logs'] }
         }
       ] 
     }

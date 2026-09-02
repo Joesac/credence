@@ -1,3 +1,4 @@
+import { USER_ROLES } from './roles.const';
 import { Menu } from '../interfaces/menu.interface';
 
 export const MENU: Menu[] = [
@@ -52,7 +53,9 @@ export const MENU: Menu[] = [
     children: [
       { id: 'user-details', label: 'User Details', isActive: false },
       { id: 'users-list', label: 'Users', isActive: false },
-      { id: 'sync', label: 'Cloud Sync', isActive: false },
+      { id: 'sync', label: 'Cloud Sync', isActive: false, role: USER_ROLES.Admin },
+      { id: 'administrator', label: 'Administrator', isActive: false, role: USER_ROLES.Admin },
+      { id: 'audit-logs', label: 'Audit Logs', isActive: false, role: USER_ROLES.Admin },
     ]
   },
 ];

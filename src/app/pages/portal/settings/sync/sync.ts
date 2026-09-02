@@ -1,10 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
 import { SyncService } from '@api/services/sync.service';
 import { CloudSyncConfigService } from '@api/config';
 import { ToastService } from '@core/components/toast/service/toast-service';
+import { AuthService } from '../../../auth/services/auth-service';
+import { SyncAdminPasswordDialogComponent } from '@shared/components/sync-admin-password-dialog/sync-admin-password-dialog';
 import { SyncStats, SyncResult } from '@interfaces/sync.interface';
 
 interface ConfigData {
@@ -25,7 +28,7 @@ const TABLE_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-sync',
   standalone: true,
-  imports: [FormField, Inputfield, MatButtonModule],
+  imports: [FormField, Inputfield, MatButtonModule, MatDialogModule],
   templateUrl: './sync.html',
   styleUrl: './sync.scss',
   host: { 'class': 'w-full flex justify-center' },
@@ -34,12 +37,15 @@ export class SyncComponent implements OnInit {
   private readonly syncService = inject(SyncService);
   private readonly configService = inject(CloudSyncConfigService);
   private readonly toastService = inject(ToastService);
+  private readonly authService = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly isSyncing = this.syncService.isSyncing;
   protected readonly progress = this.syncService.progress;
   protected readonly syncStats = signal<SyncStats>({});
   protected readonly lastSyncAt = signal<string | null>(null);
   protected readonly isConfigured = signal(false);
+  protected readonly isEditingConfig = signal(false);
   protected readonly isLoading = signal(true);
   protected readonly isSavingConfig = signal(false);
   protected readonly lastResult = signal<SyncResult | null>(null);
@@ -65,6 +71,7 @@ export class SyncComponent implements OnInit {
       ]);
 
       this.isConfigured.set(!!config.apiUrl && !!config.apiKey);
+      this.isEditingConfig.set(false);
       this.syncStats.set(stats);
       this.lastSyncAt.set(lastSync);
 
@@ -101,6 +108,7 @@ export class SyncComponent implements OnInit {
         apiKey: payload.apiKey.trim(),
       });
       this.isConfigured.set(true);
+      this.isEditingConfig.set(false);
       this.toastService.success({ message: 'Cloud sync configuration saved.' });
     } catch (error) {
       this.toastService.error({ message: 'Unable to save configuration. Please try again.' });
@@ -160,15 +168,44 @@ export class SyncComponent implements OnInit {
     }
   }
 
-  protected onEditConfig(): void {
-    this.isConfigured.set(false);
+  protected async onEditConfig(): Promise<void> {
+    try {
+      const status = await this.authService.getSyncAdminPasswordStatus();
+      if (!status.isSet) {
+        this.isConfigured.set(false);
+        this.isEditingConfig.set(true);
+        return;
+      }
+    } catch {
+      this.toastService.error({ message: 'Unable to verify sync access. Please try again.' });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(SyncAdminPasswordDialogComponent, {
+      width: '400px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((verified) => {
+      if (verified) {
+        this.isConfigured.set(false);
+        this.isEditingConfig.set(true);
+      }
+    });
+  }
+
+  protected onBack(): void {
+    this.isConfigured.set(true);
+    this.isEditingConfig.set(false);
+    void this.loadState();
   }
 
   protected async onClearConfig(): Promise<void> {
     try {
-      await this.configService.saveConfig({ apiUrl: '', apiKey: '' });
+      await this.configService.clearConfig();
       this.configModel.set({ apiUrl: '', apiKey: '' });
       this.isConfigured.set(false);
+      this.isEditingConfig.set(false);
       this.toastService.success({ message: 'Cloud sync configuration cleared.' });
     } catch (error) {
       this.toastService.error({ message: 'Unable to clear configuration. Please try again.' });

@@ -25,18 +25,21 @@ import {
 } from '@interfaces/loan.interface';
 import { DashboardData, DailySummary } from '@interfaces/dashboard.interface';
 import { FundDistributionSummary, GlobalFundDistributionStats, CreateFundDistributionPayload } from '@interfaces/fund-distribution.interface';
+import { AuditLog } from '@interfaces/audit-log.interface';
 
 export interface ElectronAPI {
   getDashboardData: () => Promise<DashboardData>;
   getDailySummary: (payload: { date: string }) => Promise<DailySummary>;
   getUsers: () => Promise<User[]>;
-  addUser: (payload: { fullname: string; username: string; password: string }) => Promise<User>;
+  addUser: (payload: { fullname: string; username: string; password: string; role?: string; actorId?: string }) => Promise<User>;
   getUserById: (payload: { id: string }) => Promise<User | null>;
   loginUser: (payload: { username: string; password: string }) => Promise<User>;
   logoutUser: (payload: { userId: string }) => Promise<{ success: boolean }>;
-  updateUser: (payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string }) => Promise<User>;
+  updateUser: (payload: { id: string; currentPassword?: string; fullname?: string; username?: string; password?: string; role?: string; actorId?: string }) => Promise<User>;
   verifyPassword: (payload: { userId: string; password: string }) => Promise<{ valid: boolean }>;
-  toggleUserStatus: (payload: { userId: string }) => Promise<User>;
+  toggleUserStatus: (payload: { userId: string; actorId: string }) => Promise<User>;
+  adminResetUserPassword: (payload: { actorId: string; actorPassword: string; targetUserId: string; newPassword: string }) => Promise<User>;
+  getAuditLogs: () => Promise<AuditLog[]>;
   getMembers: (payload: PaginationRequest) => Promise<PaginatedResponse<Member>>;
   getMemberById: (payload: { id: string }) => Promise<any>;
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => Promise<any>;
@@ -69,6 +72,11 @@ export interface ElectronAPI {
   getSyncStats: () => Promise<Record<string, number>>;
   getSetting: (payload: { key: string }) => Promise<string | null>;
   setSetting: (payload: { key: string; value: string }) => Promise<{ success: boolean }>;
+  verifySyncAdminPassword: (payload: { password: string }) => Promise<{ valid: boolean }>;
+  getSyncAdminPasswordStatus: () => Promise<{ isSet: boolean }>;
+  setSyncAdminPassword: (payload: { actorId: string; currentPassword?: string; newPassword: string }) => Promise<{ success: boolean }>;
+  saveSyncConfig: (payload: { actorId: string; apiUrl: string; apiKey: string }) => Promise<{ success: boolean }>;
+  clearSyncConfig: (payload: { actorId: string }) => Promise<{ success: boolean }>;
 }
 
 declare global {

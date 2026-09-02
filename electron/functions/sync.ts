@@ -1,4 +1,9 @@
 import Database from 'better-sqlite3';
+import { USER_ROLES } from '../constants';
+import { createAuditLog } from './audit';
+import { createIpcError } from '../errors';
+import { fetchUserById } from './users';
+import { ClearSyncConfigPayload, SaveSyncConfigPayload } from '../types';
 
 /**
  * Tables eligible for cloud sync, ordered by foreign-key dependency.
@@ -113,5 +118,49 @@ export function setSetting(
     ON CONFLICT(key) DO UPDATE SET value = @value, date_updated = datetime('now')
   `);
   stmt.run({ key: payload.key, value: payload.value });
+  return { success: true };
+}
+
+const SETTING_API_URL = 'api_base_url';
+const SETTING_API_KEY = 'api_key';
+
+export function saveSyncConfig(
+  db: Database.Database,
+  payload: SaveSyncConfigPayload
+): { success: boolean } {
+  const actor = fetchUserById(db, payload.actorId);
+  if (!actor || actor.role !== USER_ROLES.Admin) {
+    throw createIpcError('FORBIDDEN', 'Only administrators can save cloud sync configuration.');
+  }
+
+  setSetting(db, { key: SETTING_API_URL, value: payload.apiUrl });
+  setSetting(db, { key: SETTING_API_KEY, value: payload.apiKey });
+
+  createAuditLog(db, {
+    actorId: payload.actorId,
+    action: 'SYNC_CONFIG_SAVED',
+    details: JSON.stringify({ api_url: payload.apiUrl }),
+  });
+
+  return { success: true };
+}
+
+export function clearSyncConfig(
+  db: Database.Database,
+  payload: ClearSyncConfigPayload
+): { success: boolean } {
+  const actor = fetchUserById(db, payload.actorId);
+  if (!actor || actor.role !== USER_ROLES.Admin) {
+    throw createIpcError('FORBIDDEN', 'Only administrators can clear cloud sync configuration.');
+  }
+
+  setSetting(db, { key: SETTING_API_URL, value: '' });
+  setSetting(db, { key: SETTING_API_KEY, value: '' });
+
+  createAuditLog(db, {
+    actorId: payload.actorId,
+    action: 'SYNC_CONFIG_CLEARED',
+  });
+
   return { success: true };
 }
