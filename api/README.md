@@ -1,7 +1,7 @@
 # Credence Cloud API
 
-Express + Drizzle ORM + Neon Postgres API for Credence cloud sync.
-Deployed on Vercel (free Hobby tier).
+Hono + Drizzle ORM + Neon Postgres API for Credence cloud sync.
+Deployed on Cloudflare Workers.
 
 ## Setup
 
@@ -43,13 +43,12 @@ For applying individual migrations instead of `push` (recommended when the live 
 npm run dev
 ```
 
-The API runs on `http://localhost:3001`.
+The API runs on `http://localhost:3001`. The local server is `src/dev-server.ts`
+(a Node adapter around the Hono app); the Workers entry point is `src/worker.ts`.
 
-## Deploy to Vercel
+## Deploy to Cloudflare Workers
 
-1. Push the `credence/` folder to a Git repository
-2. Import the project in Vercel
-3. Set environment variables in Vercel dashboard:
+1. Login and set the environment secrets (one-time). Values mirror the `.env` file:
    - `DATABASE_URL` — Neon connection string
    - `API_KEY` — same key you configured in the desktop app
    - `JWT_SECRET` — secret for member JWT auth
@@ -57,9 +56,36 @@ The API runs on `http://localhost:3001`.
    - `ONESIGNAL_REST_API_KEY` — OneSignal REST API key (server-side only)
    - `NOTIFICATIONS_CRON_SECRET` — secret authorizing processor invocations (falls back to `API_KEY`)
    - `NOTIFICATIONS_MAX_ATTEMPTS` — max delivery attempts before an event is marked `FAILED` (default `5`)
-4. Deploy
 
-The `vercel.json` routes all `/api/*` requests to the Express app.
+```bash
+npx wrangler login
+npx wrangler secret put DATABASE_URL
+npx wrangler secret put API_KEY
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put ONESIGNAL_APP_ID
+npx wrangler secret put ONESIGNAL_REST_API_KEY
+npx wrangler secret put NOTIFICATIONS_CRON_SECRET
+# optional: npx wrangler secret put NOTIFICATIONS_MAX_ATTEMPTS
+```
+
+2. Deploy:
+
+```bash
+npm run deploy
+```
+
+The `wrangler.json` configures the Worker with `nodejs_compat` and a Cloudflare
+Cron Trigger (`*/2 * * * *`) that drains the notification outbox through the
+`scheduled` handler in `src/worker.ts`.
+
+> The database connection is created lazily on first request, so the Worker
+> bundle can be uploaded before secrets are configured. Without the secrets,
+> requests that touch the database will fail with
+> `DATABASE_URL environment variable is required`.
+
+> Note: `nodejs_compat` is required for the `node:crypto` usage (scrypt password
+> verification and timing-safe API key comparison). For compatibility dates
+> `2026-08-04` or later it is enabled by default.
 
 ## API Endpoints
 
@@ -88,25 +114,28 @@ Durable push delivery is implemented as a transactional outbox so that OneSignal
 Flow:
 1. Desktop sync upserts a deposit/withdrawal into Postgres.
 2. In the **same transaction**, a row is inserted into `notification_events` (`type`, `entity_id`, `member_id`, `payload`). A `UNIQUE (type, entity_id)` constraint prevents duplicate events when sync is retried.
-3. An external scheduler (Vercel's Hobby plan has no cron jobs) calls `/api/cron/notifications`, which claims pending events with `FOR UPDATE SKIP LOCKED`, checks member preferences, and dispatches to OneSignal using `include_aliases.external_id` + `target_channel: push` (current OneSignal API).
+3. A scheduler (Cloudflare Cron Trigger or an external HTTP cron) calls `/api/cron/notifications`, which claims pending events with `FOR UPDATE SKIP LOCKED`, checks member preferences, and dispatches to OneSignal using `include_aliases.external_id` + `target_channel: push` (current OneSignal API).
 4. Transient failures (HTTP 429 / 5xx) are retried with backoff up to `NOTIFICATIONS_MAX_ATTEMPTS`; other 4xx errors are treated as permanent. Exhausted events are marked `FAILED`.
 
-### Scheduling the processor (external cron)
+### Scheduling the processor
 
-The processor endpoint requires no Vercel cron — any HTTP client can call it. Vercel's Hobby plan doesn't support cron jobs, so use a free external scheduler:
+The processor endpoint requires no platform cron — any HTTP client can call it.
+
+**Cloudflare Cron Trigger (default):** `wrangler.json` registers `*/2 * * * *`.
+The `scheduled` handler in `src/worker.ts` synthesizes a request to
+`/api/cron/notifications` with the `NOTIFICATIONS_CRON_SECRET` header, so the
+same route/middleware authorizes both HTTP and scheduled invocations.
+
+Alternatively, call it manually from any external scheduler:
 
 ```http
 GET /api/cron/notifications
 Authorization: Bearer <NOTIFICATIONS_CRON_SECRET>
 ```
 
-Free options:
-
-- **cron-job.org** — free tier allows intervals down to 1 minute. Create a job with URL `https://<your-app>.vercel.app/api/cron/notifications` and add the `Authorization: Bearer <secret>` header. You can also pass `?limit=100&batches=5` to drain faster.
-- **EasyCron** — free tier with 5-minute minimum interval.
-- **GitHub Actions** — a scheduled workflow with `cron: "*/5 * * * *"` that calls the endpoint with `curl`. Minimum interval is 5 minutes.
-
-Pick one that can send a custom `Authorization` header. The scheduler may run concurrently with itself — the processor uses `FOR UPDATE SKIP LOCKED`, so overlapping runs are safe.
+You can pass `?limit=100&batches=5` to drain faster. The scheduler may run
+concurrently with itself — the processor uses `FOR UPDATE SKIP LOCKED`, so
+overlapping runs are safe.
 
 Tables:
 - `notification_events` — the outbox queue (statuses: `PENDING`, `PROCESSING`, `SENT`, `SKIPPED`, `FAILED`)

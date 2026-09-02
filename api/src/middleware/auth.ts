@@ -1,29 +1,27 @@
-import { timingSafeEqual } from 'crypto';
-import type { Request, Response, NextFunction } from 'express';
+import { timingSafeEqual } from 'node:crypto';
+import type { MiddlewareHandler } from 'hono';
 
 /**
- * Express middleware that validates the Bearer API key against process.env.API_KEY.
+ * Hono middleware that validates the Bearer API key against process.env.API_KEY.
  * Uses timingSafeEqual to prevent timing attacks on key comparison.
  *
  * Returns 401 with a structured error matching the IpcError shape from the desktop app.
  */
-export function requireApiKey(req: Request, res: Response, next: NextFunction): void {
+export const requireApiKey: MiddlewareHandler = async (c, next) => {
   const expectedKey = process.env.API_KEY;
   if (!expectedKey) {
-    res.status(500).json({
+    return c.json({
       code: 'API_KEY_NOT_CONFIGURED',
       message: 'Server API key is not configured.',
-    });
-    return;
+    }, 500);
   }
 
-  const authHeader = req.headers.authorization;
+  const authHeader = c.req.header('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({
+    return c.json({
       code: 'UNAUTHORIZED',
       message: 'Missing or invalid Authorization header. Expected: Bearer <key>',
-    });
-    return;
+    }, 401);
   }
 
   const providedKey = authHeader.slice(7);
@@ -31,12 +29,8 @@ export function requireApiKey(req: Request, res: Response, next: NextFunction): 
   const providedBuffer = Buffer.from(providedKey);
 
   if (expectedBuffer.length !== providedBuffer.length || !timingSafeEqual(expectedBuffer, providedBuffer)) {
-    res.status(401).json({
-      code: 'UNAUTHORIZED',
-      message: 'Invalid API key.',
-    });
-    return;
+    return c.json({ code: 'UNAUTHORIZED', message: 'Invalid API key.' }, 401);
   }
 
-  next();
-}
+  await next();
+};

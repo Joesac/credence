@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, and, desc, gte, sql } from 'drizzle-orm';
 import { db } from '../../db';
@@ -12,11 +12,11 @@ import {
   notifications,
   member_notification_prefs,
 } from '../../db/schema';
-import { requireMember } from '../middleware/member-auth';
+import { requireMember, getMemberId, type MemberVariables } from '../middleware/member-auth';
 import { verifyPassword, hashPassword } from '../utils/password';
 import { toApiPrefs } from '../utils/notification-prefs';
 
-const router = Router();
+const router = new Hono<{ Variables: MemberVariables }>();
 
 // All member routes require JWT auth
 router.use(requireMember);
@@ -29,169 +29,154 @@ function toNumber(value: unknown): number {
   return typeof value === 'string' ? parseFloat(value) : (value as number) ?? 0;
 }
 
-function getMemberId(req: { member?: { memberId: string } }): string {
-  const id = req.member?.memberId;
-  if (!id) throw new Error('Member ID missing from request');
-  return id;
-}
-
 // ---------------------------------------------------------------------------
 // GET /api/members/me — Profile
 // ---------------------------------------------------------------------------
 
-router.get('/members/me', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
+router.get('/members/me', async (c) => {
+  const memberId = getMemberId(c);
 
-    const [member] = await db
-      .select({
-        id: members.id,
-        fullname: members.fullname,
-        account_number: members.account_number,
-        telephoneNumber: members.telephoneNumber,
-        location: members.location,
-        date_created: members.date_created,
-        date_updated: members.date_updated,
-        is_disabled: members.is_disabled,
-      })
-      .from(members)
-      .where(and(eq(members.id, memberId), eq(members.is_deleted, false)));
+  const [member] = await db
+    .select({
+      id: members.id,
+      fullname: members.fullname,
+      account_number: members.account_number,
+      telephoneNumber: members.telephoneNumber,
+      location: members.location,
+      date_created: members.date_created,
+      date_updated: members.date_updated,
+      is_disabled: members.is_disabled,
+    })
+    .from(members)
+    .where(and(eq(members.id, memberId), eq(members.is_deleted, false)));
 
-    if (!member) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Member not found.' });
-      return;
-    }
-
-    res.json(member);
-  } catch (err) {
-    next(err);
+  if (!member) {
+    return c.json({ code: 'NOT_FOUND', message: 'Member not found.' }, 404);
   }
+
+  return c.json(member);
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/dashboard — Summary + recent activities
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/dashboard', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
+router.get('/members/me/dashboard', async (c) => {
+  const memberId = getMemberId(c);
 
-    // Financial summary via aggregate queries
-    const [depositAgg] = await db
-      .select({
-        total: sql<string>`COALESCE(SUM(${deposits.amount}), 0)`,
-        tokens: sql<string>`COALESCE(SUM(${deposits.refreshment_token}), 0)`,
-      })
-      .from(deposits)
-      .where(and(eq(deposits.member_id, memberId), eq(deposits.is_cancelled, false)));
+  // Financial summary via aggregate queries
+  const [depositAgg] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${deposits.amount}), 0)`,
+      tokens: sql<string>`COALESCE(SUM(${deposits.refreshment_token}), 0)`,
+    })
+    .from(deposits)
+    .where(and(eq(deposits.member_id, memberId), eq(deposits.is_cancelled, false)));
 
-    const [withdrawalAgg] = await db
-      .select({ total: sql<string>`COALESCE(SUM(${withdrawals.amount}), 0)` })
-      .from(withdrawals)
-      .where(and(eq(withdrawals.member_id, memberId), eq(withdrawals.is_cancelled, false)));
+  const [withdrawalAgg] = await db
+    .select({ total: sql<string>`COALESCE(SUM(${withdrawals.amount}), 0)` })
+    .from(withdrawals)
+    .where(and(eq(withdrawals.member_id, memberId), eq(withdrawals.is_cancelled, false)));
 
-    const [loanAgg] = await db
-      .select({
-        count: sql<number>`COUNT(*)::int`,
-        outstanding: sql<string>`COALESCE(SUM(${loans.amount} + (${loans.amount} * ${loans.interest_rate} / 100)), 0)`,
-      })
-      .from(loans)
-      .where(and(eq(loans.member_id, memberId), eq(loans.is_cancelled, false)));
+  const [loanAgg] = await db
+    .select({
+      count: sql<number>`COUNT(*)::int`,
+      outstanding: sql<string>`COALESCE(SUM(${loans.amount} + (${loans.amount} * ${loans.interest_rate} / 100)), 0)`,
+    })
+    .from(loans)
+    .where(and(eq(loans.member_id, memberId), eq(loans.is_cancelled, false)));
 
-    // Total repaid across all active loans
-    const [repaidAgg] = await db
-      .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
-      .from(loan_repayments)
-      .innerJoin(loans, eq(loans.id, loan_repayments.loan_id))
-      .where(
-        and(
-          eq(loans.member_id, memberId),
-          eq(loans.is_cancelled, false),
-          eq(loan_repayments.is_cancelled, false),
-        ),
-      );
+  // Total repaid across all active loans
+  const [repaidAgg] = await db
+    .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
+    .from(loan_repayments)
+    .innerJoin(loans, eq(loans.id, loan_repayments.loan_id))
+    .where(
+      and(
+        eq(loans.member_id, memberId),
+        eq(loans.is_cancelled, false),
+        eq(loan_repayments.is_cancelled, false),
+      ),
+    );
 
-    const totalDeposits = toNumber(depositAgg?.total);
-    const totalWithdrawals = toNumber(withdrawalAgg?.total);
-    const totalOutstanding = toNumber(loanAgg?.outstanding) - toNumber(repaidAgg?.total);
+  const totalDeposits = toNumber(depositAgg?.total);
+  const totalWithdrawals = toNumber(withdrawalAgg?.total);
+  const totalOutstanding = toNumber(loanAgg?.outstanding) - toNumber(repaidAgg?.total);
 
-    // Recent activities — union of deposits, withdrawals, loans, repayments
-    const recentDeposits = await db
-      .select({
-        id: deposits.id,
-        type: sql<'deposit'>`'deposit'`,
-        amount: deposits.amount,
-        date: deposits.date_created,
-        status: sql<string>`'completed'`,
-      })
-      .from(deposits)
-      .where(and(eq(deposits.member_id, memberId), eq(deposits.is_cancelled, false)))
-      .orderBy(desc(deposits.date_created))
-      .limit(5);
+  // Recent activities — union of deposits, withdrawals, loans, repayments
+  const recentDeposits = await db
+    .select({
+      id: deposits.id,
+      type: sql<'deposit'>`'deposit'`,
+      amount: deposits.amount,
+      date: deposits.date_created,
+      status: sql<string>`'completed'`,
+    })
+    .from(deposits)
+    .where(and(eq(deposits.member_id, memberId), eq(deposits.is_cancelled, false)))
+    .orderBy(desc(deposits.date_created))
+    .limit(5);
 
-    const recentWithdrawals = await db
-      .select({
-        id: withdrawals.id,
-        type: sql<'withdrawal'>`'withdrawal'`,
-        amount: withdrawals.amount,
-        date: withdrawals.date_created,
-        status: sql<string>`'completed'`,
-      })
-      .from(withdrawals)
-      .where(and(eq(withdrawals.member_id, memberId), eq(withdrawals.is_cancelled, false)))
-      .orderBy(desc(withdrawals.date_created))
-      .limit(5);
+  const recentWithdrawals = await db
+    .select({
+      id: withdrawals.id,
+      type: sql<'withdrawal'>`'withdrawal'`,
+      amount: withdrawals.amount,
+      date: withdrawals.date_created,
+      status: sql<string>`'completed'`,
+    })
+    .from(withdrawals)
+    .where(and(eq(withdrawals.member_id, memberId), eq(withdrawals.is_cancelled, false)))
+    .orderBy(desc(withdrawals.date_created))
+    .limit(5);
 
-    const recentLoans = await db
-      .select({
-        id: loans.id,
-        type: sql<'loan'>`'loan'`,
-        amount: loans.amount,
-        date: loans.date_created,
-        status: sql<string>`CASE WHEN ${loans.is_cancelled} THEN 'cancelled' ELSE 'active' END`,
-      })
-      .from(loans)
-      .where(eq(loans.member_id, memberId))
-      .orderBy(desc(loans.date_created))
-      .limit(5);
+  const recentLoans = await db
+    .select({
+      id: loans.id,
+      type: sql<'loan'>`'loan'`,
+      amount: loans.amount,
+      date: loans.date_created,
+      status: sql<string>`CASE WHEN ${loans.is_cancelled} THEN 'cancelled' ELSE 'active' END`,
+    })
+    .from(loans)
+    .where(eq(loans.member_id, memberId))
+    .orderBy(desc(loans.date_created))
+    .limit(5);
 
-    const recentRepayments = await db
-      .select({
-        id: loan_repayments.id,
-        type: sql<'repayment'>`'repayment'`,
-        amount: loan_repayments.amount,
-        date: loan_repayments.date_created,
-        status: sql<string>`'completed'`,
-      })
-      .from(loan_repayments)
-      .innerJoin(loans, eq(loans.id, loan_repayments.loan_id))
-      .where(and(eq(loans.member_id, memberId), eq(loan_repayments.is_cancelled, false)))
-      .orderBy(desc(loan_repayments.date_created))
-      .limit(5);
+  const recentRepayments = await db
+    .select({
+      id: loan_repayments.id,
+      type: sql<'repayment'>`'repayment'`,
+      amount: loan_repayments.amount,
+      date: loan_repayments.date_created,
+      status: sql<string>`'completed'`,
+    })
+    .from(loan_repayments)
+    .innerJoin(loans, eq(loans.id, loan_repayments.loan_id))
+    .where(and(eq(loans.member_id, memberId), eq(loan_repayments.is_cancelled, false)))
+    .orderBy(desc(loan_repayments.date_created))
+    .limit(5);
 
-    const allActivities = [...recentDeposits, ...recentWithdrawals, ...recentLoans, ...recentRepayments]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10)
-      .map((a) => ({
-        ...a,
-        member_name: '',
-        amount: toNumber(a.amount),
-      }));
+  const allActivities = [...recentDeposits, ...recentWithdrawals, ...recentLoans, ...recentRepayments]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10)
+    .map((a) => ({
+      ...a,
+      member_name: '',
+      amount: toNumber(a.amount),
+    }));
 
-    res.json({
-      summary: {
-        totalDeposits,
-        totalWithdrawals,
-        availableBalance: totalDeposits - totalWithdrawals,
-        activeLoansCount: loanAgg?.count ?? 0,
-        totalOutstanding: Math.max(0, totalOutstanding),
-        totalRefreshmentTokens: toNumber(depositAgg?.tokens),
-      },
-      recentActivities: allActivities,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return c.json({
+    summary: {
+      totalDeposits,
+      totalWithdrawals,
+      availableBalance: totalDeposits - totalWithdrawals,
+      activeLoansCount: loanAgg?.count ?? 0,
+      totalOutstanding: Math.max(0, totalOutstanding),
+      totalRefreshmentTokens: toNumber(depositAgg?.tokens),
+    },
+    recentActivities: allActivities,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -209,362 +194,330 @@ const paginationSchema = z.object({
 // GET /api/members/me/deposits — Paginated deposit history
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/deposits', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(req.query);
-    const offset = requestedOffset ?? (page - 1) * limit;
-    const filters = [
-      eq(deposits.member_id, memberId),
-      eq(deposits.is_cancelled, false),
-      ...(startDate ? [gte(deposits.date_created, new Date(startDate))] : []),
-    ];
+router.get('/members/me/deposits', async (c) => {
+  const memberId = getMemberId(c);
+  const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(c.req.query());
+  const offset = requestedOffset ?? (page - 1) * limit;
+  const filters = [
+    eq(deposits.member_id, memberId),
+    eq(deposits.is_cancelled, false),
+    ...(startDate ? [gte(deposits.date_created, new Date(startDate))] : []),
+  ];
 
-    const [countResult] = await db
-      .select({ total: sql<number>`COUNT(*)::int` })
-      .from(deposits)
-      .where(and(...filters));
+  const [countResult] = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(deposits)
+    .where(and(...filters));
 
-    const rows = await db
-      .select({
-        id: deposits.id,
-        transaction_id: deposits.transaction_id,
-        member_id: deposits.member_id,
-        member_name: members.fullname,
-        received_by: deposits.received_by,
-        received_by_name: users.fullname,
-        payment_method: deposits.payment_method,
-        amount: deposits.amount,
-        refreshment_token: deposits.refreshment_token,
-        notes: deposits.notes,
-        is_cancelled: deposits.is_cancelled,
-        date_created: deposits.date_created,
-        date_updated: deposits.date_updated,
-      })
-      .from(deposits)
-      .leftJoin(members, eq(members.id, deposits.member_id))
-      .leftJoin(users, eq(users.id, deposits.received_by))
-      .where(and(...filters))
-      .orderBy(desc(deposits.date_created))
-      .limit(limit)
-      .offset(offset);
+  const rows = await db
+    .select({
+      id: deposits.id,
+      transaction_id: deposits.transaction_id,
+      member_id: deposits.member_id,
+      member_name: members.fullname,
+      received_by: deposits.received_by,
+      received_by_name: users.fullname,
+      payment_method: deposits.payment_method,
+      amount: deposits.amount,
+      refreshment_token: deposits.refreshment_token,
+      notes: deposits.notes,
+      is_cancelled: deposits.is_cancelled,
+      date_created: deposits.date_created,
+      date_updated: deposits.date_updated,
+    })
+    .from(deposits)
+    .leftJoin(members, eq(members.id, deposits.member_id))
+    .leftJoin(users, eq(users.id, deposits.received_by))
+    .where(and(...filters))
+    .orderBy(desc(deposits.date_created))
+    .limit(limit)
+    .offset(offset);
 
-    const total = countResult?.total ?? 0;
+  const total = countResult?.total ?? 0;
 
-    res.json({
-      data: rows.map((r) => ({
-        ...r,
-        amount: toNumber(r.amount),
-      })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasMore: offset + rows.length < total,
-      nextOffset: offset + rows.length,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return c.json({
+    data: rows.map((r) => ({
+      ...r,
+      amount: toNumber(r.amount),
+    })),
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasMore: offset + rows.length < total,
+    nextOffset: offset + rows.length,
+  });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/withdrawals — Paginated withdrawal history
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/withdrawals', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(req.query);
-    const offset = requestedOffset ?? (page - 1) * limit;
-    const filters = [
-      eq(withdrawals.member_id, memberId),
-      eq(withdrawals.is_cancelled, false),
-      ...(startDate ? [gte(withdrawals.date_created, new Date(startDate))] : []),
-    ];
+router.get('/members/me/withdrawals', async (c) => {
+  const memberId = getMemberId(c);
+  const { page, offset: requestedOffset, limit, startDate } = paginationSchema.parse(c.req.query());
+  const offset = requestedOffset ?? (page - 1) * limit;
+  const filters = [
+    eq(withdrawals.member_id, memberId),
+    eq(withdrawals.is_cancelled, false),
+    ...(startDate ? [gte(withdrawals.date_created, new Date(startDate))] : []),
+  ];
 
-    const [countResult] = await db
-      .select({ total: sql<number>`COUNT(*)::int` })
-      .from(withdrawals)
-      .where(and(...filters));
+  const [countResult] = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(withdrawals)
+    .where(and(...filters));
 
-    const rows = await db
-      .select({
-        id: withdrawals.id,
-        transaction_id: withdrawals.transaction_id,
-        member_id: withdrawals.member_id,
-        member_name: members.fullname,
-        issuer_id: withdrawals.issuer_id,
-        issuer_name: users.fullname,
-        amount: withdrawals.amount,
-        notes: withdrawals.notes,
-        is_cancelled: withdrawals.is_cancelled,
-        date_created: withdrawals.date_created,
-        date_updated: withdrawals.date_updated,
-      })
-      .from(withdrawals)
-      .leftJoin(members, eq(members.id, withdrawals.member_id))
-      .leftJoin(users, eq(users.id, withdrawals.issuer_id))
-      .where(and(...filters))
-      .orderBy(desc(withdrawals.date_created))
-      .limit(limit)
-      .offset(offset);
+  const rows = await db
+    .select({
+      id: withdrawals.id,
+      transaction_id: withdrawals.transaction_id,
+      member_id: withdrawals.member_id,
+      member_name: members.fullname,
+      issuer_id: withdrawals.issuer_id,
+      issuer_name: users.fullname,
+      amount: withdrawals.amount,
+      notes: withdrawals.notes,
+      is_cancelled: withdrawals.is_cancelled,
+      date_created: withdrawals.date_created,
+      date_updated: withdrawals.date_updated,
+    })
+    .from(withdrawals)
+    .leftJoin(members, eq(members.id, withdrawals.member_id))
+    .leftJoin(users, eq(users.id, withdrawals.issuer_id))
+    .where(and(...filters))
+    .orderBy(desc(withdrawals.date_created))
+    .limit(limit)
+    .offset(offset);
 
-    const total = countResult?.total ?? 0;
+  const total = countResult?.total ?? 0;
 
-    res.json({
-      data: rows.map((r) => ({
-        ...r,
-        amount: toNumber(r.amount),
-      })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasMore: offset + rows.length < total,
-      nextOffset: offset + rows.length,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return c.json({
+    data: rows.map((r) => ({
+      ...r,
+      amount: toNumber(r.amount),
+    })),
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasMore: offset + rows.length < total,
+    nextOffset: offset + rows.length,
+  });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/deposits/:id — Deposit detail
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/deposits/:id', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const depositId = req.params.id;
+router.get('/members/me/deposits/:id', async (c) => {
+  const memberId = getMemberId(c);
+  const depositId = c.req.param('id');
 
-    const [row] = await db
-      .select({
-        id: deposits.id,
-        transaction_id: deposits.transaction_id,
-        member_id: deposits.member_id,
-        member_name: members.fullname,
-        received_by: deposits.received_by,
-        received_by_name: users.fullname,
-        payment_method: deposits.payment_method,
-        amount: deposits.amount,
-        refreshment_token: deposits.refreshment_token,
-        notes: deposits.notes,
-        is_cancelled: deposits.is_cancelled,
-        date_created: deposits.date_created,
-        date_updated: deposits.date_updated,
-      })
-      .from(deposits)
-      .leftJoin(members, eq(members.id, deposits.member_id))
-      .leftJoin(users, eq(users.id, deposits.received_by))
-      .where(and(eq(deposits.id, depositId), eq(deposits.member_id, memberId)));
+  const [row] = await db
+    .select({
+      id: deposits.id,
+      transaction_id: deposits.transaction_id,
+      member_id: deposits.member_id,
+      member_name: members.fullname,
+      received_by: deposits.received_by,
+      received_by_name: users.fullname,
+      payment_method: deposits.payment_method,
+      amount: deposits.amount,
+      refreshment_token: deposits.refreshment_token,
+      notes: deposits.notes,
+      is_cancelled: deposits.is_cancelled,
+      date_created: deposits.date_created,
+      date_updated: deposits.date_updated,
+    })
+    .from(deposits)
+    .leftJoin(members, eq(members.id, deposits.member_id))
+    .leftJoin(users, eq(users.id, deposits.received_by))
+    .where(and(eq(deposits.id, depositId), eq(deposits.member_id, memberId)));
 
-    if (!row) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Deposit not found.' });
-      return;
-    }
-
-    res.json({ ...row, amount: toNumber(row.amount) });
-  } catch (err) {
-    next(err);
+  if (!row) {
+    return c.json({ code: 'NOT_FOUND', message: 'Deposit not found.' }, 404);
   }
+
+  return c.json({ ...row, amount: toNumber(row.amount) });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/withdrawals/:id — Withdrawal detail
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/withdrawals/:id', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const withdrawalId = req.params.id;
+router.get('/members/me/withdrawals/:id', async (c) => {
+  const memberId = getMemberId(c);
+  const withdrawalId = c.req.param('id');
 
-    const [row] = await db
-      .select({
-        id: withdrawals.id,
-        transaction_id: withdrawals.transaction_id,
-        member_id: withdrawals.member_id,
-        member_name: members.fullname,
-        issuer_id: withdrawals.issuer_id,
-        issuer_name: users.fullname,
-        amount: withdrawals.amount,
-        notes: withdrawals.notes,
-        is_cancelled: withdrawals.is_cancelled,
-        date_created: withdrawals.date_created,
-        date_updated: withdrawals.date_updated,
-      })
-      .from(withdrawals)
-      .leftJoin(members, eq(members.id, withdrawals.member_id))
-      .leftJoin(users, eq(users.id, withdrawals.issuer_id))
-      .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.member_id, memberId)));
+  const [row] = await db
+    .select({
+      id: withdrawals.id,
+      transaction_id: withdrawals.transaction_id,
+      member_id: withdrawals.member_id,
+      member_name: members.fullname,
+      issuer_id: withdrawals.issuer_id,
+      issuer_name: users.fullname,
+      amount: withdrawals.amount,
+      notes: withdrawals.notes,
+      is_cancelled: withdrawals.is_cancelled,
+      date_created: withdrawals.date_created,
+      date_updated: withdrawals.date_updated,
+    })
+    .from(withdrawals)
+    .leftJoin(members, eq(members.id, withdrawals.member_id))
+    .leftJoin(users, eq(users.id, withdrawals.issuer_id))
+    .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.member_id, memberId)));
 
-    if (!row) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Withdrawal not found.' });
-      return;
-    }
-
-    res.json({ ...row, amount: toNumber(row.amount) });
-  } catch (err) {
-    next(err);
+  if (!row) {
+    return c.json({ code: 'NOT_FOUND', message: 'Withdrawal not found.' }, 404);
   }
+
+  return c.json({ ...row, amount: toNumber(row.amount) });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/loans — Loan list with computed fields
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/loans', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const { page, offset: requestedOffset, limit } = paginationSchema.parse(req.query);
-    const offset = requestedOffset ?? (page - 1) * limit;
+router.get('/members/me/loans', async (c) => {
+  const memberId = getMemberId(c);
+  const { page, offset: requestedOffset, limit } = paginationSchema.parse(c.req.query());
+  const offset = requestedOffset ?? (page - 1) * limit;
 
-    const [countResult] = await db
-      .select({ total: sql<number>`COUNT(*)::int` })
-      .from(loans)
-      .where(eq(loans.member_id, memberId));
+  const [countResult] = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(loans)
+    .where(eq(loans.member_id, memberId));
 
-    const memberLoans = await db
-      .select()
-      .from(loans)
-      .where(eq(loans.member_id, memberId))
-      .orderBy(desc(loans.date_created))
-      .limit(limit)
-      .offset(offset);
+  const memberLoans = await db
+    .select()
+    .from(loans)
+    .where(eq(loans.member_id, memberId))
+    .orderBy(desc(loans.date_created))
+    .limit(limit)
+    .offset(offset);
 
-    const data = await Promise.all(
-      memberLoans.map(async (loan) => {
-        const [repaidAgg] = await db
-          .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
-          .from(loan_repayments)
-          .where(
-            and(
-              eq(loan_repayments.loan_id, loan.id),
-              eq(loan_repayments.is_cancelled, false),
-            ),
-          );
+  const data = await Promise.all(
+    memberLoans.map(async (loan) => {
+      const [repaidAgg] = await db
+        .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
+        .from(loan_repayments)
+        .where(
+          and(
+            eq(loan_repayments.loan_id, loan.id),
+            eq(loan_repayments.is_cancelled, false),
+          ),
+        );
 
-        const principal = toNumber(loan.amount);
-        const interestAmount = (principal * toNumber(loan.interest_rate)) / 100;
-        const totalRepaid = toNumber(repaidAgg?.total);
-        const outstandingBalance = Math.max(0, principal + interestAmount - totalRepaid);
+      const principal = toNumber(loan.amount);
+      const interestAmount = (principal * toNumber(loan.interest_rate)) / 100;
+      const totalRepaid = toNumber(repaidAgg?.total);
+      const outstandingBalance = Math.max(0, principal + interestAmount - totalRepaid);
 
-        return {
-          ...loan,
-          amount: principal,
-          interest_rate: toNumber(loan.interest_rate),
-          computedInterestAmount: interestAmount,
-          outstandingBalance,
-          totalRepaid,
-        };
-      }),
-    );
+      return {
+        ...loan,
+        amount: principal,
+        interest_rate: toNumber(loan.interest_rate),
+        computedInterestAmount: interestAmount,
+        outstandingBalance,
+        totalRepaid,
+      };
+    }),
+  );
 
-    const total = countResult?.total ?? 0;
-    res.json({
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasMore: offset + data.length < total,
-      nextOffset: offset + data.length,
-    });
-  } catch (err) {
-    next(err);
-  }
+  const total = countResult?.total ?? 0;
+  return c.json({
+    data,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasMore: offset + data.length < total,
+    nextOffset: offset + data.length,
+  });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/loans/:id — Loan detail
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/loans/:id', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const loanId = req.params.id;
+router.get('/members/me/loans/:id', async (c) => {
+  const memberId = getMemberId(c);
+  const loanId = c.req.param('id');
 
-    const [row] = await db
-      .select({
-        loan: loans,
-        issuer: { id: users.id, fullname: users.fullname, accountNumber: sql<string>`NULL` },
-      })
-      .from(loans)
-      .leftJoin(users, eq(users.id, loans.issuer_id))
-      .where(and(eq(loans.id, loanId), eq(loans.member_id, memberId)));
+  const [row] = await db
+    .select({
+      loan: loans,
+      issuer: { id: users.id, fullname: users.fullname, accountNumber: sql<string>`NULL` },
+    })
+    .from(loans)
+    .leftJoin(users, eq(users.id, loans.issuer_id))
+    .where(and(eq(loans.id, loanId), eq(loans.member_id, memberId)));
 
-    if (!row) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Loan not found.' });
-      return;
-    }
-
-    const loan = row.loan;
-    const [repaidAgg] = await db
-      .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
-      .from(loan_repayments)
-      .where(
-        and(eq(loan_repayments.loan_id, loan.id), eq(loan_repayments.is_cancelled, false)),
-      );
-
-    const principal = toNumber(loan.amount);
-    const interestAmount = (principal * toNumber(loan.interest_rate)) / 100;
-    const totalRepaid = toNumber(repaidAgg?.total);
-    const outstandingBalance = Math.max(0, principal + interestAmount - totalRepaid);
-
-    res.json({
-      ...loan,
-      amount: principal,
-      interest_rate: toNumber(loan.interest_rate),
-      computedInterestAmount: interestAmount,
-      outstandingBalance,
-      totalRepaid,
-      issuer: row.issuer,
-    });
-  } catch (err) {
-    next(err);
+  if (!row) {
+    return c.json({ code: 'NOT_FOUND', message: 'Loan not found.' }, 404);
   }
+
+  const loan = row.loan;
+  const [repaidAgg] = await db
+    .select({ total: sql<string>`COALESCE(SUM(${loan_repayments.amount}), 0)` })
+    .from(loan_repayments)
+    .where(
+      and(eq(loan_repayments.loan_id, loan.id), eq(loan_repayments.is_cancelled, false)),
+    );
+
+  const principal = toNumber(loan.amount);
+  const interestAmount = (principal * toNumber(loan.interest_rate)) / 100;
+  const totalRepaid = toNumber(repaidAgg?.total);
+  const outstandingBalance = Math.max(0, principal + interestAmount - totalRepaid);
+
+  return c.json({
+    ...loan,
+    amount: principal,
+    interest_rate: toNumber(loan.interest_rate),
+    computedInterestAmount: interestAmount,
+    outstandingBalance,
+    totalRepaid,
+    issuer: row.issuer,
+  });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/loans/:id/repayments — Repayment history for a loan
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/loans/:id/repayments', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const loanId = req.params.id;
+router.get('/members/me/loans/:id/repayments', async (c) => {
+  const memberId = getMemberId(c);
+  const loanId = c.req.param('id');
 
-    // Verify the loan belongs to the member
-    const [loan] = await db
-      .select({ id: loans.id })
-      .from(loans)
-      .where(and(eq(loans.id, loanId), eq(loans.member_id, memberId)));
+  // Verify the loan belongs to the member
+  const [loan] = await db
+    .select({ id: loans.id })
+    .from(loans)
+    .where(and(eq(loans.id, loanId), eq(loans.member_id, memberId)));
 
-    if (!loan) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Loan not found.' });
-      return;
-    }
-
-    const repayments = await db
-      .select({
-        repayment: loan_repayments,
-        receiver: { id: users.id, fullname: users.fullname },
-      })
-      .from(loan_repayments)
-      .leftJoin(users, eq(users.id, loan_repayments.receiver_id))
-      .where(eq(loan_repayments.loan_id, loanId))
-      .orderBy(desc(loan_repayments.date_created));
-
-    res.json(
-      repayments.map((r) => ({
-        ...r.repayment,
-        amount: toNumber(r.repayment.amount),
-        receiver: r.receiver,
-      })),
-    );
-  } catch (err) {
-    next(err);
+  if (!loan) {
+    return c.json({ code: 'NOT_FOUND', message: 'Loan not found.' }, 404);
   }
+
+  const repayments = await db
+    .select({
+      repayment: loan_repayments,
+      receiver: { id: users.id, fullname: users.fullname },
+    })
+    .from(loan_repayments)
+    .leftJoin(users, eq(users.id, loan_repayments.receiver_id))
+    .where(eq(loan_repayments.loan_id, loanId))
+    .orderBy(desc(loan_repayments.date_created));
+
+  return c.json(
+    repayments.map((r) => ({
+      ...r.repayment,
+      amount: toNumber(r.repayment.amount),
+      receiver: r.receiver,
+    })),
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -576,56 +529,47 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6).max(100),
 });
 
-router.patch('/members/me/password', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const parsed = changePasswordSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.error.message });
-      return;
-    }
-
-    const { currentPassword, newPassword } = parsed.data;
-
-    const [member] = await db
-      .select({ id: members.id, password: members.password })
-      .from(members)
-      .where(eq(members.id, memberId));
-
-    if (!member || !member.password || !verifyPassword(currentPassword, member.password)) {
-      res.status(401).json({ code: 'UNAUTHORIZED', message: 'Current password is incorrect.' });
-      return;
-    }
-
-    const hashed = hashPassword(newPassword);
-    await db
-      .update(members)
-      .set({ password: hashed, date_updated: new Date() })
-      .where(eq(members.id, memberId));
-
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
+router.patch('/members/me/password', async (c) => {
+  const memberId = getMemberId(c);
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = changePasswordSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ code: 'VALIDATION_ERROR', message: parsed.error.message }, 400);
   }
+
+  const { currentPassword, newPassword } = parsed.data;
+
+  const [member] = await db
+    .select({ id: members.id, password: members.password })
+    .from(members)
+    .where(eq(members.id, memberId));
+
+  if (!member || !member.password || !verifyPassword(currentPassword, member.password)) {
+    return c.json({ code: 'UNAUTHORIZED', message: 'Current password is incorrect.' }, 401);
+  }
+
+  const hashed = hashPassword(newPassword);
+  await db
+    .update(members)
+    .set({ password: hashed, date_updated: new Date() })
+    .where(eq(members.id, memberId));
+
+  return c.json({ success: true });
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/notification-preferences — Read push preferences
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/notification-preferences', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
+router.get('/members/me/notification-preferences', async (c) => {
+  const memberId = getMemberId(c);
 
-    const [row] = await db
-      .select()
-      .from(member_notification_prefs)
-      .where(eq(member_notification_prefs.member_id, memberId));
+  const [row] = await db
+    .select()
+    .from(member_notification_prefs)
+    .where(eq(member_notification_prefs.member_id, memberId));
 
-    res.json(toApiPrefs(row));
-  } catch (err) {
-    next(err);
-  }
+  return c.json(toApiPrefs(row));
 });
 
 // ---------------------------------------------------------------------------
@@ -640,98 +584,85 @@ const notificationPrefsSchema = z.object({
   reminderAlerts: z.boolean().optional(),
 });
 
-router.patch('/members/me/notification-preferences', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const parsed = notificationPrefsSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.error.message });
-      return;
-    }
-
-    const patch = parsed.data;
-    await db
-      .insert(member_notification_prefs)
-      .values({ member_id: memberId, ...patch, date_updated: new Date() })
-      .onConflictDoUpdate({
-        target: member_notification_prefs.member_id,
-        set: { ...patch, date_updated: new Date() },
-      });
-
-    const [row] = await db
-      .select()
-      .from(member_notification_prefs)
-      .where(eq(member_notification_prefs.member_id, memberId));
-
-    res.json(toApiPrefs(row));
-  } catch (err) {
-    next(err);
+router.patch('/members/me/notification-preferences', async (c) => {
+  const memberId = getMemberId(c);
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = notificationPrefsSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ code: 'VALIDATION_ERROR', message: parsed.error.message }, 400);
   }
+
+  const patch = parsed.data;
+  await db
+    .insert(member_notification_prefs)
+    .values({ member_id: memberId, ...patch, date_updated: new Date() })
+    .onConflictDoUpdate({
+      target: member_notification_prefs.member_id,
+      set: { ...patch, date_updated: new Date() },
+    });
+
+  const [row] = await db
+    .select()
+    .from(member_notification_prefs)
+    .where(eq(member_notification_prefs.member_id, memberId));
+
+  return c.json(toApiPrefs(row));
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/members/me/notifications — Notification list
 // ---------------------------------------------------------------------------
 
-router.get('/members/me/notifications', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const { page, offset: requestedOffset, limit } = paginationSchema.parse(req.query);
-    const offset = requestedOffset ?? (page - 1) * limit;
+router.get('/members/me/notifications', async (c) => {
+  const memberId = getMemberId(c);
+  const { page, offset: requestedOffset, limit } = paginationSchema.parse(c.req.query());
+  const offset = requestedOffset ?? (page - 1) * limit;
 
-    const [countResult] = await db
-      .select({ total: sql<number>`COUNT(*)::int` })
-      .from(notifications)
-      .where(eq(notifications.member_id, memberId));
+  const [countResult] = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(notifications)
+    .where(eq(notifications.member_id, memberId));
 
-    const rows = await db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.member_id, memberId))
-      .orderBy(desc(notifications.date_created))
-      .limit(limit)
-      .offset(offset);
+  const rows = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.member_id, memberId))
+    .orderBy(desc(notifications.date_created))
+    .limit(limit)
+    .offset(offset);
 
-    const total = countResult?.total ?? 0;
+  const total = countResult?.total ?? 0;
 
-    res.json({
-      data: rows,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasMore: offset + rows.length < total,
-      nextOffset: offset + rows.length,
-    });
-  } catch (err) {
-    next(err);
-  }
+  return c.json({
+    data: rows,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    hasMore: offset + rows.length < total,
+    nextOffset: offset + rows.length,
+  });
 });
 
 // ---------------------------------------------------------------------------
 // PATCH /api/members/me/notifications/:id/read — Mark notification as read
 // ---------------------------------------------------------------------------
 
-router.patch('/members/me/notifications/:id/read', async (req, res, next) => {
-  try {
-    const memberId = getMemberId(req);
-    const notificationId = req.params.id;
+router.patch('/members/me/notifications/:id/read', async (c) => {
+  const memberId = getMemberId(c);
+  const notificationId = c.req.param('id');
 
-    const [updated] = await db
-      .update(notifications)
-      .set({ is_read: true })
-      .where(and(eq(notifications.id, notificationId), eq(notifications.member_id, memberId)))
-      .returning();
+  const [updated] = await db
+    .update(notifications)
+    .set({ is_read: true })
+    .where(and(eq(notifications.id, notificationId), eq(notifications.member_id, memberId)))
+    .returning();
 
-    if (!updated) {
-      res.status(404).json({ code: 'NOT_FOUND', message: 'Notification not found.' });
-      return;
-    }
-
-    res.json(updated);
-  } catch (err) {
-    next(err);
+  if (!updated) {
+    return c.json({ code: 'NOT_FOUND', message: 'Notification not found.' }, 404);
   }
+
+  return c.json(updated);
 });
 
 export { router as memberRouter };

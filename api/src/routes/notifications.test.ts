@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import jwt from 'jsonwebtoken';
-import type { NextFunction, Request, Response } from 'express';
+import { SignJWT } from 'jose';
 import { notificationsRouter } from './notifications';
 
 const mocks = vi.hoisted(() => {
@@ -26,45 +25,15 @@ function chainDelete() {
   });
 }
 
-function makeRes() {
-  const res = {} as Response & { statusCode: number; body: unknown };
-  res.statusCode = 200;
-  res.body = undefined;
-  res.status = ((code: number) => {
-    res.statusCode = code;
-    return res;
-  }) as Response['status'];
-  res.json = ((body: unknown) => {
-    res.body = body;
-    return res;
-  }) as Response['json'];
-  res.setHeader = (() => res) as Response['setHeader'];
-  res.end = (() => res) as unknown as Response['end'];
-  return res;
+async function makeToken(): Promise<string> {
+  return new SignJWT({ memberId: 'real-member', accountNumber: 'ACC-1' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('5m')
+    .sign(new TextEncoder().encode(process.env.JWT_SECRET as string));
 }
 
-function makeReq(overrides: Partial<Request> = {}): Request {
-  const token = jwt.sign({ memberId: 'real-member', accountNumber: 'ACC-1' }, process.env.JWT_SECRET as string, {
-    expiresIn: '5m',
-  });
-  return {
-    method: 'POST',
-    url: '/members/me/notifications/subscriptions',
-    headers: { authorization: `Bearer ${token}` },
-    body: {},
-    params: {},
-    query: {},
-    ...overrides,
-  } as Request;
-}
-
-function invoke(req: Request, res: Response): Promise<void> {
-  const next = vi.fn() as unknown as NextFunction;
-  return new Promise((resolve) => {
-    (notificationsRouter as unknown as (r: Request, s: Response, n: NextFunction) => void)(req, res, next);
-    // Express dispatch is synchronous for these handlers.
-    resolve();
-  });
+function authHeaders(token: string): Record<string, string> {
+  return { authorization: `Bearer ${token}`, 'content-type': 'application/json' };
 }
 
 describe('POST /members/me/notifications/subscriptions', () => {
@@ -75,23 +44,26 @@ describe('POST /members/me/notifications/subscriptions', () => {
   });
 
   it('requires authentication', async () => {
-    const res = makeRes();
-    const req = makeReq({ headers: {} });
+    const res = await notificationsRouter.request('/members/me/notifications/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ subscriptionId: 'sub-1' }),
+    });
 
-    await invoke(req, res);
-
-    expect(res.statusCode).toBe(401);
+    expect(res.status).toBe(401);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
   it('registers the subscription under the AUTHENTICATED member id', async () => {
-    const res = makeRes();
+    const token = await makeToken();
     // Attempt to register for someone else's member id — must be ignored.
-    const req = makeReq({ body: { subscriptionId: 'sub-1', pushToken: 'tok', platform: 'android', memberId: 'someone-else' } });
+    const res = await notificationsRouter.request('/members/me/notifications/subscriptions', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({ subscriptionId: 'sub-1', pushToken: 'tok', platform: 'android', memberId: 'someone-else' }),
+    });
 
-    await invoke(req, res);
-
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
     expect(mocks.insert).toHaveBeenCalledTimes(1);
     const valuesCall = mocks.insert.mock.results[0].value.values.mock.calls[0] as [Record<string, unknown>];
     const values = valuesCall[0];
@@ -103,21 +75,26 @@ describe('POST /members/me/notifications/subscriptions', () => {
   });
 
   it('rejects invalid bodies', async () => {
-    const res = makeRes();
-    const req = makeReq({ body: { pushToken: 'no-subscription-id' } });
+    const token = await makeToken();
+    const res = await notificationsRouter.request('/members/me/notifications/subscriptions', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({ pushToken: 'no-subscription-id' }),
+    });
 
-    await invoke(req, res);
-
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
   it('upserts idempotently on (member_id, subscription_id)', async () => {
-    const res = makeRes();
-    const req = makeReq({ body: { subscriptionId: 'sub-1' } });
+    const token = await makeToken();
+    const res = await notificationsRouter.request('/members/me/notifications/subscriptions', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({ subscriptionId: 'sub-1' }),
+    });
 
-    await invoke(req, res);
-
+    expect(res.status).toBe(200);
     const upsert = mocks.insert.mock.results[0].value.values.mock.results[0].value.onConflictDoUpdate;
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -136,16 +113,13 @@ describe('DELETE /members/me/notifications/subscriptions/:subscriptionId', () =>
   });
 
   it('deletes only the authenticated member\'s subscription', async () => {
-    const res = makeRes();
-    const req = makeReq({
+    const token = await makeToken();
+    const res = await notificationsRouter.request('/members/me/notifications/subscriptions/sub-9', {
       method: 'DELETE',
-      url: '/members/me/notifications/subscriptions/sub-9',
-      params: { subscriptionId: 'sub-9' },
+      headers: { authorization: `Bearer ${token}` },
     });
 
-    await invoke(req, res);
-
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
     const where = mocks.remove.mock.results[0].value.where;
     expect(where).toHaveBeenCalledTimes(1);

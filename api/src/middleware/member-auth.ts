@@ -1,51 +1,56 @@
-import jwt from 'jsonwebtoken';
-import type { Request, Response, NextFunction } from 'express';
+import { jwtVerify } from 'jose';
+import type { Context, MiddlewareHandler } from 'hono';
 
 export interface MemberPayload {
   memberId: string;
   accountNumber: string;
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    member?: MemberPayload;
-  }
-}
+/** Context variable name where the verified member payload is stored. */
+export const MEMBER_CONTEXT = 'member';
+
+/** Hono context Variables shape for authenticated member routes. */
+export type MemberVariables = { [MEMBER_CONTEXT]: MemberPayload };
 
 /**
- * Express middleware that validates a Bearer JWT (member access token).
- * Sets req.member with the decoded payload on success.
+ * Hono middleware that validates a Bearer JWT (member access token).
+ * Sets the decoded payload in the context on success.
  * Returns 401 with a structured error if the token is missing, expired, or invalid.
  */
-export function requireMember(req: Request, res: Response, next: NextFunction): void {
+export const requireMember: MiddlewareHandler<{ Variables: MemberVariables }> = async (c, next) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    res.status(500).json({
+    return c.json({
       code: 'JWT_SECRET_NOT_CONFIGURED',
       message: 'Server JWT secret is not configured.',
-    });
-    return;
+    }, 500);
   }
 
-  const authHeader = req.headers.authorization;
+  const authHeader = c.req.header('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({
+    return c.json({
       code: 'UNAUTHORIZED',
       message: 'Missing or invalid Authorization header. Expected: Bearer <token>',
-    });
-    return;
+    }, 401);
   }
 
   const token = authHeader.slice(7);
   try {
-    const decoded = jwt.verify(token, secret) as MemberPayload;
-    if (!decoded.memberId) {
-      res.status(401).json({ code: 'UNAUTHORIZED', message: 'Invalid token payload.' });
-      return;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    if (!payload.memberId) {
+      return c.json({ code: 'UNAUTHORIZED', message: 'Invalid token payload.' }, 401);
     }
-    req.member = decoded;
-    next();
+    c.set(MEMBER_CONTEXT, {
+      memberId: payload.memberId as string,
+      accountNumber: (payload.accountNumber as string) ?? '',
+    } satisfies MemberPayload);
+    await next();
   } catch {
-    res.status(401).json({ code: 'UNAUTHORIZED', message: 'Token expired or invalid.' });
+    return c.json({ code: 'UNAUTHORIZED', message: 'Token expired or invalid.' }, 401);
   }
+};
+
+/** Reads the authenticated member id from the request context. */
+export function getMemberId(c: Context<{ Variables: MemberVariables }>): string {
+  return c.get(MEMBER_CONTEXT).memberId;
 }
