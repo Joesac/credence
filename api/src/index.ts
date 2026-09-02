@@ -10,12 +10,21 @@ import { cronRouter } from './routes/cron';
 
 const app = new Hono();
 
-// CORS: allow all origins. The API is protected by the Bearer API key for sync
-// and by JWT for member routes, so origin allowlisting is not required.
+// CORS: only browser origins we trust may read API responses.
+// Non-browser clients (mobile app, Electron main process, Node fetch, curl)
+// do not send an Origin header and bypass CORS entirely — auth handles them.
 // Hono's cors middleware replies to OPTIONS preflight requests automatically,
 // so preflight requests never hit auth.
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:4200',
+  'http://localhost:4300',
+]);
+
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    if (!origin) return null;
+    return ALLOWED_ORIGINS.has(origin) ? origin : null;
+  },
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Authorization', 'Content-Type'],
 }));
