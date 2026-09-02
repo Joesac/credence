@@ -181,6 +181,7 @@ Content-Type: application/json
 - The `users.password` and `members.password` columns store **scrypt-salted hashes** (not plaintext). The desktop app hashes passwords before storing them locally, and sync pushes the hash to the cloud.
 - The API key is sent as a Bearer token over HTTPS only.
 - The API key is compared using `timingSafeEqual` to prevent timing attacks.
+- CORS is restricted to an explicit allowlist (`http://localhost:4200`, `http://localhost:4300`) for browser-origin requests. Non-browser clients (mobile app, Electron main process, Node fetch, curl) do not send an `Origin` header and bypass CORS entirely — authentication handles them. Unknown browser origins are blocked.
 
 ## Schema Management
 
