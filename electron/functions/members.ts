@@ -67,7 +67,8 @@ export function fetchMembers(
   const totalRecords = (countStmt.get(countParams) as { total: number }).total;
 
   const listStmt = db.prepare(`
-    SELECT ${MEMBER_BASE_COLUMNS}
+    SELECT ${MEMBER_BASE_COLUMNS},
+      CASE WHEN password IS NOT NULL AND password != '' THEN 1 ELSE 0 END AS has_password
     FROM members
     WHERE ${filters}
     ORDER BY LOWER(fullname) ASC

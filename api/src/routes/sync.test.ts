@@ -55,8 +55,20 @@ describe('POST /sync/:table (notification outbox integration)', () => {
   });
 
   it('wraps withdrawal upserts in the atomic outbox statement', async () => {
+    const withdrawalRow = {
+      id: '44444444-4444-4444-4444-444444444444',
+      transaction_id: 'WDR-2026-0001',
+      member_id: '22222222-2222-2222-2222-222222222222',
+      issuer_id: '33333333-3333-3333-3333-333333333333',
+      amount: '200.00',
+      notes: null,
+      is_cancelled: false,
+      date_created: '2026-08-31T10:00:00Z',
+      date_updated: '2026-08-31T10:00:00Z',
+      is_synced: false,
+    };
     const res = await syncRequest('/sync/withdrawals', {
-      rows: [{ ...depositRow, id: '44444444-4444-4444-4444-444444444444', transaction_id: 'WDR-2026-0001', amount: '200.00' }],
+      rows: [withdrawalRow],
     });
 
     expect(res.status).toBe(200);
@@ -111,6 +123,16 @@ describe('POST /sync/:table (notification outbox integration)', () => {
     });
 
     expect(res.status).toBe(401);
+    expect(mocks.db.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects rows with unknown columns (SQL injection prevention)', async () => {
+    const res = await syncRequest('/sync/deposits', {
+      rows: [{ ...depositRow, 'malicious"; DROP TABLE--': 'x' }],
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
     expect(mocks.db.execute).not.toHaveBeenCalled();
   });
 });

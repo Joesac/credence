@@ -66,7 +66,7 @@
     <div class="flex items-center space-x-1">
         <button 
             (click)="changePage(currentPage() - 1)"
-            [disabled]="currentPage() === 1"
+            [disabled]="processing() || currentPage() === 1"
             class="flex items-center justify-center p-1.5 rounded-lg border border-border-base disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed bg-surface hover:bg-surface-hover"
         >
             <span class="material-symbols-outlined text-lg leading-none text-text-main">chevron_left</span>
@@ -78,7 +78,7 @@
 
         <button 
             (click)="changePage(currentPage() + 1)"
-            [disabled]="currentPage() === totalPages()"
+            [disabled]="processing() || currentPage() === totalPages()"
             class="flex items-center justify-center p-1.5 rounded-lg border border-border-base disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed bg-surface hover:bg-surface-hover"
         >
             <span class="material-symbols-outlined text-lg leading-none text-text-main">chevron_right</span>
@@ -91,7 +91,8 @@
         <select 
           [value]="pageSize()" 
           (change)="onPageSizeChange($event)"
-          class="border border-border-base bg-surface rounded-lg px-2 py-1 outline-none text-text-main focus:border-brand-primary transition-colors"
+          [disabled]="processing()"
+          class="border border-border-base bg-surface rounded-lg px-2 py-1 outline-none text-text-main focus:border-brand-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           @for (option of pageSizeOptions; track option) {
             <option [value]="option">{{ option }}</option>

@@ -124,6 +124,12 @@ export const routes: Routes = [
           loadComponent: () => import('./pages/portal/settings/audit-logs/audit-logs').then(m => m.AuditLogsComponent),
           canActivate: [adminGuard],
           data: { breadcrumb: ['Audit Logs'] }
+        },
+        {
+          path: 'mobile-passwords',
+          loadComponent: () => import('./pages/portal/settings/mobile-passwords/mobile-passwords').then(m => m.MobilePasswordsComponent),
+          canActivate: [adminGuard],
+          data: { breadcrumb: ['Mobile Passwords'] }
         }
       ] 
     }

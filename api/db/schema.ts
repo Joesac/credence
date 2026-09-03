@@ -34,6 +34,7 @@ export const members = pgTable('members', {
   date_updated: timestamp('date_updated', { withTimezone: true }).notNull().defaultNow(),
   is_deleted: boolean('is_deleted').notNull().default(false),
   is_disabled: boolean('is_disabled').notNull().default(false),
+  must_change_password: boolean('must_change_password').notNull().default(false),
   is_synced: boolean('is_synced').notNull().default(true),
 });
 

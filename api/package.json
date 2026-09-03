@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "tsx --env-file=.env src/dev-server.ts",
     "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --config wrangler.prod.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
