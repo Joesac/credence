@@ -91,6 +91,7 @@ export async function sendToMember(params: SendToMemberParams): Promise<void> {
         headings,
         contents,
         data,
+        priority: 10,
       }),
       signal: AbortSignal.timeout(ONESIGNAL_TIMEOUT_MS),
     });

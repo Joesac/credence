@@ -43,6 +43,7 @@ describe('OneSignalService.sendToMember', () => {
     expect(body.headings).toEqual({ en: 'Deposit received' });
     expect(body.contents).toEqual({ en: 'A deposit of GHS 500.00 has been recorded on your account.' });
     expect(body.data).toEqual(params.data);
+    expect(body.priority).toBe(10);
   });
 
   it('targets the member id (not email or device id) so all subscriptions receive it', async () => {
