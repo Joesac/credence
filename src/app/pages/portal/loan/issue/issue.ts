@@ -3,7 +3,7 @@ import { form, required, FormField, min } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { MemberSelectionDropdown } from '@shared/components/member-selection-dropdown/member-selection-dropdown';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
@@ -38,7 +38,7 @@ interface LoanIssueData {
     MatButtonModule,
     DisableCoverComponent
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './issue.html',
   styleUrl: './issue.scss',
   host: { 'class': 'w-full flex justify-center' }

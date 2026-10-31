@@ -5,7 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog } from '@angular/material/dialog';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from '@shared/components/data-table/directive/data-table-cell-directive';
 import { UtilsService } from '@shared/services/utils-service';
@@ -35,7 +35,7 @@ type DailyTransaction = TransactionDetailsRow;
     ActionsButtonComponent,
     TransactionDetailsSidebar,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './daily.html',
   styleUrl: './daily.scss',
 })

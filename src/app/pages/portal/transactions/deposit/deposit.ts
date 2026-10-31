@@ -3,7 +3,7 @@ import { required, form, FormField, min } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { Dropdown } from '@shared/components/dropdown/dropdown';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '../../../../interfaces/member.interface';
@@ -36,7 +36,7 @@ interface DepositData {
     MatInputModule,
     MatButtonModule
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './deposit.html',
   styleUrl: './deposit.scss',
   host: { 'class': 'w-full flex justify-center' }
