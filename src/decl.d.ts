@@ -43,7 +43,7 @@ export interface ElectronAPI {
   getMembers: (payload: PaginationRequest) => Promise<PaginatedResponse<Member>>;
   getMemberById: (payload: { id: string }) => Promise<any>;
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => Promise<any>;
-  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; creatorId?: string; isDisabled?: number | boolean }) => Promise<any>;
+  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; password?: string; creatorId?: string; isDisabled?: number | boolean }) => Promise<any>;
   deleteMember: (payload: { id: string }) => Promise<{ success: boolean }>;
   getMemberFinancials: (payload: { memberId: string }) => Promise<MemberFinancialSummary>;
   getDeposits: (payload: PaginationRequest & { includeCancelled?: boolean; memberId?: string; date?: string }) => Promise<PaginatedDeposits>;

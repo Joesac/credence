@@ -3,7 +3,7 @@ import { required, form, FormField, min } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Inputfield } from '@shared/components/inputfield/inputfield';
@@ -32,7 +32,7 @@ interface withdrawalData {
     MatInputModule,
     MatButtonModule
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './withdrawal.html',
   styleUrl: './withdrawal.scss',
   host: { 'class': 'w-full flex justify-center' }

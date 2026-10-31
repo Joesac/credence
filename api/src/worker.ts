@@ -17,6 +17,10 @@ export default {
     const request = new Request('https://internal/api/cron/notifications', {
       headers: { authorization: `Bearer ${secret}` },
     });
-    await app.fetch(request);
+    try {
+      await app.fetch(request);
+    } catch (err) {
+      console.error('[cron] Notification processing failed:', err instanceof Error ? err.message : String(err));
+    }
   },
 };

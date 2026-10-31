@@ -1,11 +1,11 @@
-import { Component, inject, signal, computed, effect, ViewChild } from '@angular/core';
+import { Component, inject, signal, computed, effect, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog } from '@angular/material/dialog';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { DataTable, ColumnDef } from '@shared/components/data-table/data-table';
 import { DataTableCellDirective } from '@shared/components/data-table/directive/data-table-cell-directive';
 import { UtilsService } from '@shared/services/utils-service';
@@ -16,30 +16,11 @@ import { Deposit } from '@interfaces/deposit.interface';
 import { Withdrawal } from '@interfaces/withdrawal.interface';
 import { DailySummary } from '@interfaces/dashboard.interface';
 import { IpcBridgeService } from '@core/services/ipc-bridge-service';
-import { RightSidebarService } from '@core/services/right-sidebar-service';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
-import { CdkPortal, PortalModule } from '@angular/cdk/portal';
 import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
+import { TransactionDetailsSidebar, TransactionDetailsRow } from '@shared/components/transaction-details-sidebar/transaction-details-sidebar';
 
-type DailyTransaction = {
-  id: string;
-  transactionId: string;
-  type: 'Deposit' | 'Withdrawal';
-  memberName: string;
-  amount: number;
-  refreshmentToken?: number;
-  paymentMethod?: string;
-  receivedBy?: string;
-  receivedByName?: string;
-  issuerId?: string;
-  issuerName?: string;
-  notes?: string | null;
-  occurredAt: string;
-  dateCreated: string;
-  dateUpdated: string;
-  isCancelled: boolean;
-  action?: string;
-};
+type DailyTransaction = TransactionDetailsRow;
 
 @Component({
   selector: 'app-daily',
@@ -52,9 +33,9 @@ type DailyTransaction = {
     DataTable,
     DataTableCellDirective,
     ActionsButtonComponent,
-    PortalModule,
+    TransactionDetailsSidebar,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './daily.html',
   styleUrl: './daily.scss',
 })
@@ -64,10 +45,9 @@ export class Daily {
   private readonly withdrawalService = inject(WithdrawalService);
   private readonly toastService = inject(ToastService);
   private readonly ipcBridge = inject(IpcBridgeService);
-  protected readonly rightSidebarService = inject(RightSidebarService);
   private readonly dialog = inject(MatDialog);
 
-  @ViewChild('viewDetailsPortal', { static: true }) viewDetailsPortal!: CdkPortal;
+  private readonly viewDetailsSidebar = viewChild.required<TransactionDetailsSidebar>('transactionSidebar');
 
   protected readonly selectedDate = signal<Date>(new Date());
   protected readonly isLoadingDeposits = signal<boolean>(false);
@@ -204,11 +184,15 @@ export class Daily {
   protected handleTransactionAction(action: ActionButtonOption, row: DailyTransaction): void {
     if (action.id === 'view-details') {
       this.selectedTransaction.set(row);
-      this.rightSidebarService.open(this.viewDetailsPortal);
+      this.viewDetailsSidebar().open();
       return;
     }
 
-    if (action.id !== 'cancel' || row.isCancelled) {
+    this.openCancelConfirmation(row);
+  }
+
+  protected openCancelConfirmation(row: DailyTransaction): void {
+    if (row.isCancelled) {
       return;
     }
 

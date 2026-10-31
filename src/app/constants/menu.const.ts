@@ -56,6 +56,7 @@ export const MENU: Menu[] = [
       { id: 'sync', label: 'Cloud Sync', isActive: false, role: USER_ROLES.Admin },
       { id: 'administrator', label: 'Administrator', isActive: false, role: USER_ROLES.Admin },
       { id: 'audit-logs', label: 'Audit Logs', isActive: false, role: USER_ROLES.Admin },
+      { id: 'mobile-passwords', label: 'Mobile Passwords', isActive: false, role: USER_ROLES.Admin },
     ]
   },
 ];

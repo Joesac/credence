@@ -3,7 +3,7 @@ import { required, form, FormField, min } from '@angular/forms/signals';
 import { MatButtonModule } from "@angular/material/button";
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideCredenceDateAdapter } from '@shared/providers/date-adapter';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
 import { Member } from '@interfaces/member.interface';
 import { Loan } from '@interfaces/loan.interface';
@@ -39,7 +39,7 @@ interface repaymentData {
     MatDatepickerModule,
     MatInputModule,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideCredenceDateAdapter()],
   templateUrl: './repayment.html',
   styleUrl: './repayment.scss'
 })

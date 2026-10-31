@@ -264,7 +264,7 @@ function createWindow(): void {
   const isDev = !app.isPackaged;
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:4300');
+    mainWindow.loadURL('http://localhost:4200');
   } else {
     // app.getAppPath() reliably targets the root inside app.asar in production
     const indexPath = path.join(app.getAppPath(), 'dist/credence/browser/index.html');

@@ -46,6 +46,7 @@ router.get('/members/me', async (c) => {
       date_created: members.date_created,
       date_updated: members.date_updated,
       is_disabled: members.is_disabled,
+      must_change_password: members.must_change_password,
     })
     .from(members)
     .where(and(eq(members.id, memberId), eq(members.is_deleted, false)));
@@ -544,14 +545,14 @@ router.patch('/members/me/password', async (c) => {
     .from(members)
     .where(eq(members.id, memberId));
 
-  if (!member || !member.password || !verifyPassword(currentPassword, member.password)) {
+  if (!member || !member.password || !(await verifyPassword(currentPassword, member.password))) {
     return c.json({ code: 'UNAUTHORIZED', message: 'Current password is incorrect.' }, 401);
   }
 
-  const hashed = hashPassword(newPassword);
+  const hashed = await hashPassword(newPassword);
   await db
     .update(members)
-    .set({ password: hashed, date_updated: new Date() })
+    .set({ password: hashed, must_change_password: false, date_updated: new Date() })
     .where(eq(members.id, memberId));
 
   return c.json({ success: true });

@@ -35,6 +35,7 @@ export class DataTable<T> {
   readonly data = input.required<T[]>();
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly loading = input<boolean>(false);
+  readonly processing = input<boolean>(false);
   readonly loadingMessage = input<string>('Loading...');
   readonly emptyMessage = input<string>('No records available.');
 

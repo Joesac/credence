@@ -37,12 +37,10 @@
                         </ng-template>
     
                         <ng-template appDataTableCell="action" let-row>
-                            @if (!row.isCancelled) {
-                                <app-actions-button
-                                    [actions]="transactionActions"
-                                    (onActionSelected)="handleTransactionAction($event, row)"
-                                />
-                            }
+                            <app-actions-button
+                                [actions]="getTransactionActions(row)"
+                                (onActionSelected)="handleTransactionAction($event, row)"
+                            />
                         </ng-template>
                     </app-data-table>
                 </div>
@@ -69,17 +67,21 @@
                         </ng-template>
 
                         <ng-template appDataTableCell="action" let-row>
-                            @if (!row.isCancelled) {
-                                <app-actions-button
-                                    [actions]="transactionActions"
-                                    (onActionSelected)="handleTransactionAction($event, row)"
-                                />
-                            }
+                            <app-actions-button
+                                [actions]="getTransactionActions(row)"
+                                (onActionSelected)="handleTransactionAction($event, row)"
+                            />
                         </ng-template>
                     </app-data-table>
                 </div>
             </mat-tab>
         </mat-tab-group>
+
+        <app-transaction-details-sidebar
+            #transactionSidebar
+            [transaction]="selectedTransaction()"
+            (onCancelTransaction)="openCancelConfirmation($event)"
+        />
     } @else {
         <div class="mt-4 rounded-2xl border border-dashed border-border-base bg-surface-hover p-6 text-sm text-text-muted">
             Select a member to preview their profile and history.

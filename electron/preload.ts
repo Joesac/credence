@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld(ELECTRON_API_BRIDGE_KEY, {
   getMemberById: (payload: { id: string }) => ipcRenderer.invoke(IPC_CHANNEL_GET_MEMBER_BY_ID, payload),
   getMemberFinancials: (payload: { memberId: string }) => ipcRenderer.invoke(IPC_CHANNEL_GET_MEMBER_FINANCIALS, payload),
   addMember: (payload: { fullname: string; telephoneNumber: string; location: string; creatorId: string }) => ipcRenderer.invoke(IPC_CHANNEL_ADD_MEMBER, payload),
-  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; creatorId?: string; isDisabled?: number | boolean }) => ipcRenderer.invoke(IPC_CHANNEL_UPDATE_MEMBER, payload),
+  updateMember: (payload: { id: string; fullname?: string; telephoneNumber?: string; location?: string; password?: string; creatorId?: string; isDisabled?: number | boolean }) => ipcRenderer.invoke(IPC_CHANNEL_UPDATE_MEMBER, payload),
   deleteMember: (payload: { id: string }) => ipcRenderer.invoke(IPC_CHANNEL_DELETE_MEMBER, payload),
 
   /**

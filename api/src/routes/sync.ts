@@ -15,6 +15,17 @@ const syncBodySchema = z.object({
 });
 
 /**
+ * Allowed column names per syncable table, derived from the Drizzle schema.
+ * The sync route only accepts columns that exist in the cloud DB schema,
+ * preventing SQL injection through user-supplied column identifiers.
+ */
+const ALLOWED_COLUMNS: Record<SyncableTableName, Set<string>> = Object.fromEntries(
+  (Object.entries(TABLE_REGISTRY) as [SyncableTableName, (typeof TABLE_REGISTRY)[SyncableTableName]][]).map(
+    ([name, table]) => [name, new Set(Object.keys(table))] as const,
+  ),
+) as Record<SyncableTableName, Set<string>>;
+
+/**
  * POST /api/sync/:table
  *
  * Upserts a batch of rows (max 100) into the specified table.
@@ -50,6 +61,14 @@ router.post('/sync/:table', requireApiKey, async (c) => {
 
   // Build column list from the first row (all rows should have the same shape)
   const columns = Object.keys(rows[0]);
+  const allowed = ALLOWED_COLUMNS[tableName];
+  const invalid = columns.filter((col) => !allowed.has(col));
+  if (invalid.length) {
+    return c.json(
+      { code: 'VALIDATION_ERROR', message: `Unknown column(s) for '${tableName}': ${invalid.join(', ')}` },
+      400,
+    );
+  }
   const updateColumns = columns.filter((c) => c !== 'id');
 
   // Build the query using sql template tag for proper parameterization.

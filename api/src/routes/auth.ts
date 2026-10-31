@@ -66,6 +66,7 @@ router.post('/auth/login', async (c) => {
       date_created: members.date_created,
       date_updated: members.date_updated,
       is_disabled: members.is_disabled,
+      must_change_password: members.must_change_password,
     })
     .from(members)
     .where(
@@ -79,7 +80,7 @@ router.post('/auth/login', async (c) => {
     return c.json({ code: 'UNAUTHORIZED', message: 'Invalid account number or password.' }, 401);
   }
 
-  if (!member.password || !verifyPassword(password, member.password)) {
+  if (!member.password || !(await verifyPassword(password, member.password))) {
     return c.json({ code: 'UNAUTHORIZED', message: 'Invalid account number or password.' }, 401);
   }
 

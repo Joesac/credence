@@ -4,6 +4,7 @@ import { errorHandler } from './middleware/error';
 import { syncRouter } from './routes/sync';
 import { healthRouter } from './routes/health';
 import { authRouter } from './routes/auth';
+import { adminRouter } from './routes/admin';
 import { memberRouter } from './routes/member';
 import { notificationsRouter } from './routes/notifications';
 import { cronRouter } from './routes/cron';
@@ -37,6 +38,9 @@ app.route('/api', authRouter);
 
 // Sync routes require Bearer API key (officer desktop push)
 app.route('/api', syncRouter);
+
+// Admin routes (desktop-only) also require the sync API key
+app.route('/api', adminRouter);
 
 // Notification processor trigger — external cron / manual (protected inside the router)
 // Must be mounted BEFORE member-facing routers because those routers apply

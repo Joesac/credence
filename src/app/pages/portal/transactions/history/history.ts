@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, effect } from '@angular/core';
+import { Component, signal, computed, inject, effect, viewChild } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog } from '@angular/material/dialog';
 import { MemberSummary } from '../../members/components/member-summary/member-summary';
@@ -14,18 +14,9 @@ import { Deposit } from '@interfaces/deposit.interface';
 import { Withdrawal } from '@interfaces/withdrawal.interface';
 import { ActionsButtonComponent, ActionButtonOption } from '@shared/components/actions-button/actions-button.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog-component/confirm-dialog-component';
+import { TransactionDetailsSidebar, TransactionDetailsRow } from '@shared/components/transaction-details-sidebar/transaction-details-sidebar';
 
-type HistoryTransaction = {
-  id: string;
-  transactionId: string;
-  memberId: string;
-  type: 'Deposit' | 'Withdrawal';
-  amount: number;
-  refreshmentToken?: number;
-  occurredAt: string;
-  isCancelled: boolean;
-  action?: string;
-};
+type HistoryTransaction = TransactionDetailsRow;
 
 @Component({
   selector: 'app-history',
@@ -35,7 +26,8 @@ type HistoryTransaction = {
     DataTable,
     DataTableCellDirective,
     ActionsButtonComponent,
-    MemberSelectionDropdown
+    MemberSelectionDropdown,
+    TransactionDetailsSidebar
   ],
   templateUrl: './history.html',
   styleUrl: './history.scss',
@@ -47,8 +39,12 @@ export class History {
   private readonly withdrawalService = inject(WithdrawalService);
   private readonly toastService = inject(ToastService);
   private readonly dialog = inject(MatDialog);
-  
+
+  private readonly viewDetailsSidebar = viewChild.required<TransactionDetailsSidebar>('transactionSidebar');
+
   protected readonly selectedMember = signal<Member | null>(null);
+  /** Transaction displayed in the shared details sidebar. */
+  protected readonly selectedTransaction = signal<HistoryTransaction | null>(null);
   protected readonly isLoadingDeposits = signal<boolean>(false);
   protected readonly isLoadingWithdrawals = signal<boolean>(false);
 
@@ -123,9 +119,12 @@ export class History {
     this.transactionColumns[5],
   ];
 
-  protected readonly transactionActions: ActionButtonOption[] = [
-    { id: 'cancel', label: 'Cancel' }
-  ];
+  protected getTransactionActions(row: HistoryTransaction): ActionButtonOption[] {
+    return [
+      { id: 'view-details', label: 'View details', icon: 'visibility' },
+      ...(row.isCancelled ? [] : [{ id: 'cancel', label: 'Cancel', icon: 'cancel' }]),
+    ];
+  }
 
   protected readonly depositRows = computed<HistoryTransaction[]>(() => {
     const memberId = this.selectedMember()?.id;
@@ -136,10 +135,16 @@ export class History {
     return this.deposits().map((deposit) => this.toHistoryRow({
       id: deposit.id,
       transactionId: deposit.transaction_id ?? deposit.id,
-      memberId: deposit.member_id,
+      memberName: deposit.member_name,
       amount: deposit.amount,
       refreshmentToken: deposit.refreshment_token,
+      paymentMethod: deposit.payment_method,
+      receivedBy: deposit.received_by,
+      receivedByName: deposit.received_by_name,
+      notes: deposit.notes,
       occurredAt: deposit.date_updated ?? deposit.date_created,
+      dateCreated: deposit.date_created,
+      dateUpdated: deposit.date_updated,
       type: 'Deposit',
       isCancelled: Boolean(deposit.is_cancelled),
     }));
@@ -154,9 +159,14 @@ export class History {
     return this.withdrawals().map((withdrawal) => this.toHistoryRow({
       id: withdrawal.id,
       transactionId: withdrawal.transaction_id ?? withdrawal.id,
-      memberId: withdrawal.member_id,
+      memberName: withdrawal.member_name,
       amount: withdrawal.amount,
+      issuerId: withdrawal.issuer_id,
+      issuerName: withdrawal.issuer_name,
+      notes: withdrawal.notes,
       occurredAt: withdrawal.date_updated ?? withdrawal.date_created,
+      dateCreated: withdrawal.date_created,
+      dateUpdated: withdrawal.date_updated,
       type: 'Withdrawal',
       isCancelled: Boolean(withdrawal.is_cancelled),
     }));
@@ -187,14 +197,21 @@ export class History {
   }
 
   private toHistoryRow(row: HistoryTransaction): HistoryTransaction {
-    return {
-      ...row,
-      memberId: row.memberId,
-    };
+    return { ...row };
   }
 
   protected handleTransactionAction(action: ActionButtonOption, row: HistoryTransaction): void {
-    if (action.id !== 'cancel' || row.isCancelled) {
+    if (action.id === 'view-details') {
+      this.selectedTransaction.set(row);
+      this.viewDetailsSidebar().open();
+      return;
+    }
+
+    this.openCancelConfirmation(row);
+  }
+
+  protected openCancelConfirmation(row: HistoryTransaction): void {
+    if (row.isCancelled) {
       return;
     }
 
