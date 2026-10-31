@@ -60,7 +60,7 @@ export class Deposit {
 
   private INITIAL_DATA = <DepositData>({
     date: new Date(),
-    paymentMethod: '',
+    paymentMethod: 'cash',
     amount: null,
     refreshmentToken: null,
     notes: '',
